@@ -12,6 +12,7 @@ public static partial class Module
     public static Dictionary<string, Command> commandRegistry = new Dictionary<string, Command>
     {
         { "help", new HelpCommand() },
+        { "finduser", new FindUser() },
         // Add other commands here
     };
 
@@ -62,10 +63,12 @@ public static partial class Module
     [SpacetimeDB.Reducer]
     public static void SendCommand(ReducerContext ctx, string command, string[] args)
     {
+        Log.Info($"Received command: {command} with args: {string.Join(", ", args)}");
         if (commandRegistry.TryGetValue(command, out Command? cmd))
         {
+            Log.Info($"Executing command: {command}");
             cmd.Execute(ctx, args);
-        } 
+        }
     }
 
     [SpacetimeDB.Table(Name = "events", Public = true)]
@@ -147,31 +150,6 @@ public static partial class Module
             throw new ArgumentException("Messages must not be empty");
         }
         return text;
-    }
-
-
-
-    private static void sendEventToClient(ReducerContext ctx, Identity identity, string eventData)
-    {
-        ctx.Db.events.Insert(
-            new EventRow
-            {
-                identity = identity,
-                data = eventData
-            });
-
-        Log.Info($"Event sent to {identity}: {eventData}");
-    }
-
-
-    private static void cmd_help(ReducerContext ctx, string[] args)
-    {
-        string helpText = "Available commands:\n" +
-                          "/help - Show this help message\n" +
-                          "/list - List all users\n" +
-                          "/msg <user> <message> - Send a private message to a user";
-
-        sendEventToClient(ctx, ctx.Sender, helpText);
     }
 
     #endregion

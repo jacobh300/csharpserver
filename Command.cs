@@ -44,3 +44,35 @@ public class HelpCommand : Command
 }
 
 
+public class FindUser : Command
+{
+    public FindUser()
+    {
+
+    }
+
+    public override void Execute(ReducerContext ctx, string[] args)
+    {
+        base.Execute(ctx, args);
+        if (args.Length < 1)
+        {
+            sendEventToUser(ctx, ctx.Sender, "Usage: finduser <username>");
+            return;
+        }
+
+        string username = args[0];
+        foreach (var user in ctx.Db.user.Iter())
+        {
+            if (user.name == username)
+            {
+                sendEventToUser(ctx, ctx.Sender, $"User found: {username} (Online: {user.online})");
+                return;
+            }
+        }
+        
+        sendEventToUser(ctx, ctx.Sender, $"User not found: {username}");
+        
+    }
+}
+
+
