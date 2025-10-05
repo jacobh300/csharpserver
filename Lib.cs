@@ -1,7 +1,15 @@
 using SpacetimeDB;
+#pragma warning disable STDB_UNSTABLE
 
 public static partial class Module
 {
+
+    [SpacetimeDB.ClientVisibilityFilter]
+    public static readonly Filter EVENTS_FILTER = new Filter.Sql(
+        "SELECT * FROM events WHERE events.identity = :sender"
+    );
+
+
     #region Tables
     [SpacetimeDB.Table(Name = "user", Public = true)]
     public partial class UserRow
@@ -49,7 +57,22 @@ public static partial class Module
     [SpacetimeDB.Reducer]
     public static void SendCommand(ReducerContext ctx, string command, string[] args)
     {
+        ctx.Db.events.Insert(
+            new EventRow
+            {
+                identity = ctx.Sender,
+                data = $"{command} {string.Join(" ", args)}"
+            });
         Log.Info($"Command received: {command} with args: {string.Join(", ", args)}");
+    }
+
+    [SpacetimeDB.Table(Name = "events", Public = true)]
+    public partial class EventRow
+    {
+        [SpacetimeDB.AutoInc]
+        public int id;
+        public Identity identity;
+        public string data = "";
     }
 
     [SpacetimeDB.Reducer(ReducerKind.ClientConnected)]
