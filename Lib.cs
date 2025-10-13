@@ -5,16 +5,11 @@ public static partial class Module
 {
 
     [SpacetimeDB.ClientVisibilityFilter]
-    public static readonly Filter EVENTS_FILTER = new Filter.Sql(
-        "SELECT * FROM events WHERE events.identity = :sender"
+    public static readonly Filter RESPONSE_FILTER = new Filter.Sql(
+        "SELECT * FROM response WHERE response.identity = :sender"
     );
 
-    public static Dictionary<string, Command> commandRegistry = new Dictionary<string, Command>
-    {
-        { "help", new HelpCommand() },
-        { "finduser", new FindUser() },
-        // Add other commands here
-    };
+
 
     #region Tables
     [SpacetimeDB.Table(Name = "user", Public = true)]
@@ -60,23 +55,14 @@ public static partial class Module
                 text = text
             });
     }
-    [SpacetimeDB.Reducer]
-    public static void SendCommand(ReducerContext ctx, string command, string[] args)
-    {
-        Log.Info($"Received command: {command} with args: {string.Join(", ", args)}");
-        if (commandRegistry.TryGetValue(command, out Command? cmd))
-        {
-            Log.Info($"Executing command: {command}");
-            cmd.Execute(ctx, args);
-        }
-    }
 
-    [SpacetimeDB.Table(Name = "events", Public = true)]
-    public partial class EventRow
+    [SpacetimeDB.Table(Name = "response", Public = true)]
+    public partial class ResponseRow
     {
         [SpacetimeDB.AutoInc]
         public int id;
         public Identity identity;
+        public Timestamp sent;
         public string data = "";
     }
 
