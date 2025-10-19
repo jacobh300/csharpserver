@@ -28,6 +28,28 @@ public static partial class Module
         public Timestamp sent;
         public string text = "";
     }
+
+    [SpacetimeDB.Table(Name = "response", Public = true)]
+    public partial class ResponseRow
+    {
+        [SpacetimeDB.AutoInc]
+        public int id;
+        public Identity identity;
+        public Timestamp sent;
+        public string data = "";
+    }
+
+    [SpacetimeDB.Table(Name = "item", Public = true)]
+    public partial class ItemRow
+    {
+        [SpacetimeDB.AutoInc]
+        [SpacetimeDB.PrimaryKey]
+        public int id;
+        public Identity owner;
+        public string name = "";
+        public int quantity;
+    }
+    
     #endregion
 
     #region Reducers
@@ -54,16 +76,6 @@ public static partial class Module
                 sent = ctx.Timestamp,
                 text = text
             });
-    }
-
-    [SpacetimeDB.Table(Name = "response", Public = true)]
-    public partial class ResponseRow
-    {
-        [SpacetimeDB.AutoInc]
-        public int id;
-        public Identity identity;
-        public Timestamp sent;
-        public string data = "";
     }
 
     [SpacetimeDB.Reducer(ReducerKind.ClientConnected)]
