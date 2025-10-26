@@ -56,7 +56,7 @@ public static partial class Module
     [SpacetimeDB.Reducer]
     public static void SetName(ReducerContext ctx, string name)
     {
-        name = ValidateName(name);
+        name = Helpers.ValidateName(name);
         var user = ctx.Db.user.identity.Find(ctx.Sender);
         if (user is not null)
         {
@@ -67,7 +67,7 @@ public static partial class Module
     [SpacetimeDB.Reducer]
     public static void SendMessage(ReducerContext ctx, string text)
     {
-        text = ValidateMessage(text);
+        text = Helpers.ValidateMessage(text);
 
         ctx.Db.message.Insert(
             new MessageRow
@@ -121,34 +121,4 @@ public static partial class Module
     }
     #endregion
 
-    #region Private functions
-    /// <summary>
-    /// Takes a name and checks if it's acceptable to use.
-    /// </summary>
-    /// <param name="name">Input name</param>
-    /// <returns>Return validated name</returns>
-    /// <exception cref="Exception"></exception>
-    private static string ValidateName(string name)
-    {
-        if (string.IsNullOrEmpty(name))
-            throw new Exception("Name cannot be empty");
-        return name;
-    }
-
-    /// <summary>
-    /// Takes a message and checks if it's acceptable to use.
-    /// </summary>
-    /// <param name="text">Input text</param>
-    /// <returns>Return validated message</returns>
-    /// <exception cref="ArgumentException"></exception>
-    private static string ValidateMessage(string text)
-    {
-        if (string.IsNullOrEmpty(text))
-        {
-            throw new ArgumentException("Messages must not be empty");
-        }
-        return text;
-    }
-
-    #endregion
 }
