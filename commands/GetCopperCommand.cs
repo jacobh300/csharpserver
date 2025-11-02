@@ -17,9 +17,8 @@ public partial class GetCopperCommand : ReducerCommand
 
     protected override void run()
     {
-        //Give the user 1 copper
-        Module.ItemRow updatedRow = giveItem("copper", 1);
-        if(updatedRow == null)
+        Module.ItemRow updatedRow = _user.Items.addOrUpdateRow("copper", 1);
+        if (updatedRow == null)
         {
             respond("Error giving copper.");
             return;
