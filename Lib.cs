@@ -9,8 +9,6 @@ public static partial class Module
         "SELECT * FROM response WHERE response.identity = :sender"
     );
 
-
-
     #region Tables
     [SpacetimeDB.Table(Name = "user", Public = true)]
     public partial class UserRow
@@ -45,80 +43,81 @@ public static partial class Module
         [SpacetimeDB.AutoInc]
         [SpacetimeDB.PrimaryKey]
         public int id;
+        [SpacetimeDB.Index.BTree(Name = "OwnerIndex")]
         public Identity owner;
         public string name = "";
         public int quantity;
     }
-    
-    #endregion
 
-    #region Reducers
-    [SpacetimeDB.Reducer]
-    public static void SetName(ReducerContext ctx, string name)
-    {
-        name = Helpers.ValidateName(name);
-        var user = ctx.Db.user.identity.Find(ctx.Sender);
-        if (user is not null)
+        #endregion
+
+        #region Reducers
+        [SpacetimeDB.Reducer]
+        public static void SetName(ReducerContext ctx, string name)
         {
-            user.name = name;
-            ctx.Db.user.identity.Update(user);
-        }
-    }
-    [SpacetimeDB.Reducer]
-    public static void SendMessage(ReducerContext ctx, string text)
-    {
-        text = Helpers.ValidateMessage(text);
-
-        ctx.Db.message.Insert(
-            new MessageRow
+            name = Helpers.ValidateName(name);
+            var user = ctx.Db.user.identity.Find(ctx.Sender);
+            if (user is not null)
             {
-                sender = ctx.Sender,
-                sent = ctx.Timestamp,
-                text = text
-            });
-    }
-
-    [SpacetimeDB.Reducer(ReducerKind.ClientConnected)]
-    public static void ClientConnected(ReducerContext ctx)
-    {
-        Log.Info($"Client connected: {ctx.Sender}");
-        var user = ctx.Db.user.identity.Find(ctx.Sender);
-        if (user is not null)
-        {
-            user.online = true;
-            ctx.Db.user.identity.Update(user);
+                user.name = name;
+                ctx.Db.user.identity.Update(user);
+            }
         }
-        else
+        [SpacetimeDB.Reducer]
+        public static void SendMessage(ReducerContext ctx, string text)
         {
-            ctx.Db.user.Insert
-            (
-                new UserRow
+            text = Helpers.ValidateMessage(text);
+
+            ctx.Db.message.Insert(
+                new MessageRow
                 {
-                    name = null,
-                    identity = ctx.Sender,
-                    online = true
-                }
-            );
+                    sender = ctx.Sender,
+                    sent = ctx.Timestamp,
+                    text = text
+                });
         }
-    }
 
-    [Reducer(ReducerKind.ClientDisconnected)]
-    public static void ClientDisconnected(ReducerContext ctx)
-    {
-        var user = ctx.Db.user.identity.Find(ctx.Sender);
-
-        if (user is not null)
+        [SpacetimeDB.Reducer(ReducerKind.ClientConnected)]
+        public static void ClientConnected(ReducerContext ctx)
         {
-            // This user should exist, so set `Online: false`.
-            user.online = false;
-            ctx.Db.user.identity.Update(user);
+            Log.Info($"Client connected: {ctx.Sender}");
+            var user = ctx.Db.user.identity.Find(ctx.Sender);
+            if (user is not null)
+            {
+                user.online = true;
+                ctx.Db.user.identity.Update(user);
+            }
+            else
+            {
+                ctx.Db.user.Insert
+                (
+                    new UserRow
+                    {
+                        name = null,
+                        identity = ctx.Sender,
+                        online = true
+                    }
+                );
+            }
         }
-        else
-        {
-            // User does not exist, log warning
-            Log.Warn("Warning: No user found for disconnected client.");
-        }
-    }
-    #endregion
 
-}
+        [Reducer(ReducerKind.ClientDisconnected)]
+        public static void ClientDisconnected(ReducerContext ctx)
+        {
+            var user = ctx.Db.user.identity.Find(ctx.Sender);
+
+            if (user is not null)
+            {
+                // This user should exist, so set `Online: false`.
+                user.online = false;
+                ctx.Db.user.identity.Update(user);
+            }
+            else
+            {
+                // User does not exist, log warning
+                Log.Warn("Warning: No user found for disconnected client.");
+            }
+        }
+        #endregion
+
+    }
