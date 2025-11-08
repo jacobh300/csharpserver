@@ -19,6 +19,13 @@ public static partial class Module
         public bool online;
     }
 
+    [Table(Name = "admin", Public = false)]
+    public partial class AdminRow
+    {
+        [SpacetimeDB.PrimaryKey]
+        public Identity identity;
+    }
+
     [Table(Name = "message", Public = true)]
     public partial class MessageRow
     {
@@ -48,7 +55,7 @@ public static partial class Module
         public string name = "";
         public int quantity;
     }
-
+    
         #endregion
 
         #region Reducers

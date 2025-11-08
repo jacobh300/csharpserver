@@ -13,32 +13,34 @@ public class UserService
 {
     private ReducerContext _ctx;
     private Identity _id;
-    public ItemTable Items;
+    public UserItems Items;
 
     public UserService(ReducerContext ctx)
     {
         _ctx = ctx;
         _id = ctx.Sender;
-        Items = new ItemTable(ctx);
+        Items = new UserItems(ctx);
     }
 }
 
-public class ItemTable
+public class UserItems
 {
     private ReducerContext _ctx;
     private Dictionary<string, Module.ItemRow> rows
     {
         get { return _ctx.Db.item.OwnerIndex.Filter(_ctx.Sender).ToDictionary(item => item.name, item => item); }
     }
-    public ItemTable(ReducerContext ctx)
+
+    public UserItems(ReducerContext ctx)
     {
         _ctx = ctx;
     }
+
     public Module.ItemRow addOrUpdateRow(string itemName, int quantity)
     {
         // Use ItemRows property to get current items
         rows.TryGetValue(itemName, out var existingItem);
-        
+
         if (existingItem == null)
         {
 
@@ -62,5 +64,4 @@ public class ItemTable
         }
     }
 }
-
 
