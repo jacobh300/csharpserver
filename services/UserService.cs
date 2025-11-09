@@ -1,4 +1,5 @@
 using SpacetimeDB;
+using SpacetimeDB.Internal.TableHandles;
 using static Module;
 
 
@@ -26,9 +27,9 @@ public class UserService
 public class UserItems
 {
     private ReducerContext _ctx;
-    private Dictionary<string, Module.ItemRow> rows
+    private Dictionary<int, Module.ItemRow> rows
     {
-        get { return _ctx.Db.item.OwnerIndex.Filter(_ctx.Sender).ToDictionary(item => item.name, item => item); }
+        get { return _ctx.Db.item.OwnerIndex.Filter(_ctx.Sender).ToDictionary(item => item.item_type_id, item => item); }
     }
 
     public UserItems(ReducerContext ctx)
@@ -36,10 +37,10 @@ public class UserItems
         _ctx = ctx;
     }
 
-    public Module.ItemRow addOrUpdateRow(string itemName, int quantity)
+    public Module.ItemRow addOrUpdateRow(int itemId, int quantity)
     {
         // Use ItemRows property to get current items
-        rows.TryGetValue(itemName, out var existingItem);
+        rows.TryGetValue(itemId, out var existingItem);
 
         if (existingItem == null)
         {
@@ -47,7 +48,7 @@ public class UserItems
             Module.ItemRow itemAdded = new Module.ItemRow
             {
                 owner = _ctx.Sender,
-                name = itemName,
+                item_type_id = itemId,
                 quantity = quantity
             };
 

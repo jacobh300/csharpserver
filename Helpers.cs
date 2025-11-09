@@ -1,3 +1,6 @@
+using SpacetimeDB;
+using SpacetimeDB.Internal.TableHandles;
+
 public static class Helpers
 {
     /// <summary>
@@ -28,5 +31,29 @@ public static class Helpers
             message = message.Substring(0, 256);
         }
         return message;
+    }
+
+    public static bool IsAdmin(ReducerContext ctx)
+    {
+        Module.AdminRow? adminRow = ctx.Db.admin.identity.Find(ctx.Sender);
+
+        if (adminRow != null)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    public static Module.ItemType GetItemRowFromName(ReducerContext ctx, string itemName)
+    {
+        Module.ItemType? itemType = ctx.Db.item_types.name.Find(itemName);
+
+        if (itemType == null)
+        {
+            throw new ArgumentException("Item type does not exist: " + itemName);
+        }
+
+        return itemType;
     }
 }

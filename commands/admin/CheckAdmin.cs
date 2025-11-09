@@ -17,9 +17,7 @@ public partial class CheckAdmin : ReducerCommand
 
     protected override void run()
     {
-        //Check if user is apart of the admin table
-        Module.AdminRow? adminRow = _ctx.Db.admin.identity.Find(_ctx.Sender);
-        if (adminRow == null)
+        if(Helpers.IsAdmin(_ctx) == false)
         {
             respond("You are not an admin.");
             return;
