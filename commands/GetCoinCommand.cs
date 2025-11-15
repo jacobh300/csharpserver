@@ -18,7 +18,9 @@ public partial class GetCoinCommand : ReducerCommand
     protected override void run()
     {
         //Give the user 1 coin
-        Module.ItemRow updatedRow = _user.Items.addOrUpdateRow(Constants.ItemTypes.Coin, 1);
+        ItemService itemService = new ItemService(_ctx);
+        Module.ItemRow? updatedRow = itemService.GiveItemToUser(_user, ItemService.ItemTypeIds.Coin, 1);
+        
         if(updatedRow == null)
         {
             respond("Error giving coin.");
