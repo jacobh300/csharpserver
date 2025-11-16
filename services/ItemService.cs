@@ -9,9 +9,7 @@ public class ItemService
         _ctx = ctx;
     }
 
-
-
-    public Module.ItemRow? GiveItemToUser(UserService user, ItemTypeIds itemId, int quantity)
+    public Module.ItemRow? GiveItemToUser(UserContext user, ItemTypeIds itemId, int quantity)
     {
         var itemType = GetItemTypeById(itemId);
         if (itemType == null)
@@ -28,7 +26,7 @@ public class ItemService
     }
 
 
-    private Module.ItemRow addOrUpdateItem(UserService user, ItemTypeIds itemId, int quantity)
+    private Module.ItemRow addOrUpdateItem(UserContext user, ItemTypeIds itemId, int quantity)
     {
         // Use ItemRows property to get current items
         int id = (int)itemId;
@@ -39,7 +37,7 @@ public class ItemService
 
             Module.ItemRow itemAdded = new Module.ItemRow
             {
-                owner = _ctx.Sender,
+                owner = user.Id,
                 item_type_id = id,
                 quantity = quantity
             };

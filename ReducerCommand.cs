@@ -4,12 +4,12 @@ using SpacetimeDB;
 public abstract class ReducerCommand
 {
     protected ReducerContext _ctx;
-    protected UserService _user;
+    protected UserContext _user;
 
     public ReducerCommand(ReducerContext ctx)
     {
         _ctx = ctx;
-        _user = new UserService(ctx);
+        _user = new UserContext(ctx);
     }
 
     protected void respond(string data)

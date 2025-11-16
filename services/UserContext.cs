@@ -10,10 +10,11 @@ using static Module;
 /// specific to a user.
 /// 
 /// </summary>
-public class UserService
+public class UserContext
 {
     private ReducerContext _ctx;
     private Identity _id;
+    public Identity Id { get { return _id; } }
     private Dictionary<int, Module.ItemRow> _items
     {
         get { return _ctx.Db.item.OwnerIndex.Filter(_ctx.Sender).ToDictionary(item => item.item_type_id, item => item); }
@@ -24,7 +25,7 @@ public class UserService
         get { return _items; }
     }
 
-    public UserService(ReducerContext ctx)
+    public UserContext(ReducerContext ctx)
     {
         _ctx = ctx;
         _id = ctx.Sender;
