@@ -20,6 +20,16 @@ public class UserContext
         get { return _ctx.Db.item.OwnerIndex.Filter(_ctx.Sender).ToDictionary(item => item.item_type_id, item => item); }
     }
 
+    private Dictionary<int, Module.CompanionRow> _companions
+    {
+        get { return _ctx.Db.companion.OwnerIndex.Filter(_ctx.Sender).ToDictionary(companion => companion.id, companion => companion); }
+    }
+
+    public Dictionary<int, Module.CompanionRow> CompanionRows
+    {
+        get { return _companions; }
+    }
+
     public Dictionary<int, Module.ItemRow> ItemRows
     {
         get { return _items; }

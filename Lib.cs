@@ -19,6 +19,21 @@ public static partial class Module
         public bool online;
     }
 
+    [SpacetimeDB.Table(Name = "companion", Public = true)]
+    public partial class CompanionRow
+    {
+        [SpacetimeDB.PrimaryKey]
+        [SpacetimeDB.AutoInc]
+        public int id;
+        [SpacetimeDB.Index.BTree(Name = "OwnerIndex")]
+        public Identity owner;
+        public string name = "";
+        public DbVector2 position;
+    }
+
+
+
+
     [Table(Name = "admin", Public = false)]
     public partial class AdminRow
     {
