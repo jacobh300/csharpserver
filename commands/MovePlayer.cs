@@ -43,9 +43,9 @@ public partial class MovePlayer : ReducerCommand
 
         transform.velocity = new DbVector3
         {
-            x = _direction.x * 0.02f, // Move speed multiplier
-            y = _direction.y * 0.02f,
-            z = 0.0f
+            x = _direction.x * 0.1f, // Move speed multiplier
+            y = 0,
+            z = _direction.y * 0.1f
         };
 
         _ctx.Db.player_transform.player.Update(transform);
