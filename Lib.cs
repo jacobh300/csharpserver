@@ -83,6 +83,7 @@ public static partial class Module
         public DbVector3 position;
         public DbVector3 velocity;
         public Timestamp timestamp = new Timestamp();
+        public UInt32 sequence = 0;
     }
 
 
