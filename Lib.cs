@@ -73,6 +73,7 @@ public static partial class Module
         [SpacetimeDB.AutoInc]
         public ulong id;
         public ScheduleAt ScheduledAt;
+        public Timestamp last_tick;
     }
 
     [Table(Name = "player_transform", Public = true)]
@@ -84,6 +85,28 @@ public static partial class Module
         public DbVector3 velocity;
         public Timestamp timestamp = new Timestamp();
         public UInt32 sequence = 0;
+    }
+
+    [Table(Name = "player_input", Public = true)]
+    public partial class PlayerInputRow
+    {
+        [SpacetimeDB.PrimaryKey]
+        public Identity player;
+        public DbVector2 input;
+        public DbVector3 last_position;
+        public UInt32 sequence = 0;
+    }
+
+    [Table(Name = "entity_transform", Public = true)]
+    public partial class EntityTransformRow
+    {
+        [SpacetimeDB.PrimaryKey]
+        [SpacetimeDB.AutoInc]
+        public ulong id;
+        public string type = "";
+        public DbVector3 position;
+        public DbVector3 velocity;
+        public Timestamp timestamp = new Timestamp();
     }
 
 
@@ -124,7 +147,20 @@ public static partial class Module
         {
             user.online = true;
             ctx.Db.user.identity.Update(user);
-        }
+            PlayerTransformRow? row = ctx.Db.player_transform.player.Find(ctx.Sender);
+            if( row is not null)
+            {
+                row.sequence = 0;
+                ctx.Db.player_transform.player.Update(row);
+            }
+
+            PlayerInputRow? inputRow = ctx.Db.player_input.player.Find(ctx.Sender);
+            if( inputRow is not null)
+            {
+                inputRow.sequence = 0;
+                ctx.Db.player_input.player.Update(inputRow);
+            }
+        }       
         else
         {
             ctx.Db.user.Insert
@@ -167,26 +203,41 @@ public static partial class Module
             );
         }
 
+        //Check if the player has an input row, if not create one
+        var playerInput = ctx.Db.player_input.player.Find(ctx.Sender);
+        if (playerInput is null)
+        {
+            ctx.Db.player_input.Insert
+            (
+                new PlayerInputRow
+                {
+                    player =  ctx.Sender,
+                    input = new DbVector2 { x = 0, y = 0 },
+                    sequence = 0
+                }
+            );
+        }
+
 
     }
 
     [Reducer(ReducerKind.ClientDisconnected)]
     public static void ClientDisconnected(ReducerContext ctx)
-{
-    var user = ctx.Db.user.identity.Find(ctx.Sender);
+    {
+        var user = ctx.Db.user.identity.Find(ctx.Sender);
 
-    if (user is not null)
-    {
-        // This user should exist, so set `Online: false`.
-        user.online = false;
-        ctx.Db.user.identity.Update(user);
+        if (user is not null)
+        {
+            // This user should exist, so set `Online: false`.
+            user.online = false;
+            ctx.Db.user.identity.Update(user);
+        }
+        else
+        {
+            // User does not exist, log warning
+            Log.Warn("Warning: No user found for disconnected client.");
+        }
     }
-    else
-    {
-        // User does not exist, log warning
-        Log.Warn("Warning: No user found for disconnected client.");
-    }
-}
 
     [Reducer(ReducerKind.Init)]
     public static void InitializeModule(ReducerContext ctx)
@@ -199,7 +250,8 @@ public static partial class Module
         ctx.Db.game_tick_schedule.Insert(new GameTickSchedule
         {
             id = 0,
-            ScheduledAt = new ScheduleAt.Interval(thiryFramesPerSecondTickRate)
+            ScheduledAt = new ScheduleAt.Interval(thiryFramesPerSecondTickRate),
+            last_tick = currentTime
         });
 
     } 
@@ -207,7 +259,7 @@ public static partial class Module
     [SpacetimeDB.Reducer]
     public static void gameTick(ReducerContext ctx, GameTickSchedule schedule)
     {
-        Game.tick(ctx);
+        Game.tick(ctx, schedule);
     }
     
     #endregion

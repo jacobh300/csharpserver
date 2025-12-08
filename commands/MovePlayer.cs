@@ -25,32 +25,46 @@ public partial class MovePlayer : ReducerCommand
         //_direction = direction;
         _direction  = DbVector2.normalize(direction);  
         _sequence = sequence;
-        // Normalize direction to -1, 0, or 1
-        //_direction.x = _direction.x > 0 ? 1 : (_direction.x < 0 ? -1 : 0);
-        //_direction.y = _direction.y > 0 ? 1 : (_direction.y < 0 ? -1 : 0);
     }
 
+    //protected override void run()
+    //{
+    //    // Set the players velocity based on the input direction
+    //    Module.PlayerTransformRow? transform = _ctx.Db.player_transform.player.Find(_user.Id);
+    //    if (transform == null)
+    //    {
+    //        respond("Player transform not found.");
+    //        return;
+    //    }
+    //
+    //    // Set direction to either 1 or 0
+    //    transform.sequence = _sequence;
+    //
+    //    transform.velocity = new DbVector3
+    //    {
+    //        x = _direction.x,
+    //        y = 0,
+    //        z = _direction.y
+    //    };
+    //
+    //    _ctx.Db.player_transform.player.Update(transform);
+    //}
+
+    //Use the Input table instead to store player input for better synchronization
     protected override void run()
     {
-        // Set the players velocity based on the input direction
-        Module.PlayerTransformRow? transform = _ctx.Db.player_transform.player.Find(_user.Id);
-        if (transform == null)
+        Module.PlayerInputRow? inputRow = _ctx.Db.player_input.player.Find(_user.Id);
+        if (inputRow == null)
         {
-            respond("Player transform not found.");
+            respond("Player input row not found.");
             return;
         }
 
         // Set direction to either 1 or 0
-        transform.sequence = _sequence;
-
-        transform.velocity = new DbVector3
-        {
-            x = _direction.x,
-            y = 0,
-            z = _direction.y
-        };
-
-        _ctx.Db.player_transform.player.Update(transform);
+        inputRow.sequence = _sequence;
+        inputRow.input = _direction;
+        inputRow.last_position = _ctx.Db.player_transform.player.Find(_user.Id)?.position ?? new DbVector3(0,0,0);
+        _ctx.Db.player_input.player.Update(inputRow);
     }
 
 }
