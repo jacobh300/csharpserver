@@ -66,14 +66,17 @@ public static partial class Module
         public string name = "";
     }
     
-    [Table(Name = "game_tick_schedule", Public = false, Scheduled = nameof(gameTick), ScheduledAt = nameof(ScheduledAt))]
+    [Table(Name = "game_tick_schedule", Public = true, Scheduled = nameof(gameTick), ScheduledAt = nameof(ScheduledAt))]
     public partial struct GameTickSchedule
     {
         [SpacetimeDB.PrimaryKey]
         [SpacetimeDB.AutoInc]
         public ulong id;
         public ScheduleAt ScheduledAt;
-        public Timestamp last_tick;
+        public Timestamp lastExecuted;
+        public long tick;
+        public long lastTick;
+        public long lastSecondTick;
     }
 
     [Table(Name = "player_transform", Public = true)]
@@ -85,12 +88,16 @@ public static partial class Module
         public DbVector3 velocity;
         public Timestamp timestamp = new Timestamp();
         public UInt32 sequence = 0;
+        public long tick = 0;
     }
 
     [Table(Name = "player_input", Public = true)]
     public partial class PlayerInputRow
     {
         [SpacetimeDB.PrimaryKey]
+        [SpacetimeDB.AutoInc]
+        public ulong id;
+        [SpacetimeDB.Index.BTree(Name = "playerIndex")]
         public Identity player;
         public DbVector2 input;
         public DbVector3 last_position;
@@ -153,13 +160,6 @@ public static partial class Module
                 row.sequence = 0;
                 ctx.Db.player_transform.player.Update(row);
             }
-
-            PlayerInputRow? inputRow = ctx.Db.player_input.player.Find(ctx.Sender);
-            if( inputRow is not null)
-            {
-                inputRow.sequence = 0;
-                ctx.Db.player_input.player.Update(inputRow);
-            }
         }       
         else
         {
@@ -198,27 +198,11 @@ public static partial class Module
                     player =  ctx.Sender,
                     position = new DbVector3 { x = 0, y = 0, z = 0 },
                     velocity = new DbVector3 { x = 0, y = 0, z = 0 },
-                    timestamp = ctx.Timestamp   
+                    timestamp = ctx.Timestamp,
+                    tick = 0
                 }
             );
         }
-
-        //Check if the player has an input row, if not create one
-        var playerInput = ctx.Db.player_input.player.Find(ctx.Sender);
-        if (playerInput is null)
-        {
-            ctx.Db.player_input.Insert
-            (
-                new PlayerInputRow
-                {
-                    player =  ctx.Sender,
-                    input = new DbVector2 { x = 0, y = 0 },
-                    sequence = 0
-                }
-            );
-        }
-
-
     }
 
     [Reducer(ReducerKind.ClientDisconnected)]
@@ -246,12 +230,13 @@ public static partial class Module
         Log.Info("Module initialized.");
         var currentTime = ctx.Timestamp;
         var thiryFramesPerSecondTickRate = new TimeDuration { Microseconds = 33333 }; 
-
         ctx.Db.game_tick_schedule.Insert(new GameTickSchedule
         {
             id = 0,
             ScheduledAt = new ScheduleAt.Interval(thiryFramesPerSecondTickRate),
-            last_tick = currentTime
+            lastExecuted = currentTime,
+            tick = 0,
+            lastTick = 0,
         });
 
     } 
