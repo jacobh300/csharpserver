@@ -85,7 +85,7 @@ public static partial class Module
         [SpacetimeDB.PrimaryKey]
         public Identity player;
         public DbVector3 position;
-        public DbVector3 velocity;
+        public float moveSpeed;
         public Timestamp timestamp = new Timestamp();
         public UInt32 sequence = 0;
         public long tick = 0;
@@ -197,7 +197,7 @@ public static partial class Module
                 {
                     player =  ctx.Sender,
                     position = new DbVector3 { x = 0, y = 0, z = 0 },
-                    velocity = new DbVector3 { x = 0, y = 0, z = 0 },
+                    moveSpeed = 4.0f,
                     timestamp = ctx.Timestamp,
                     tick = 0
                 }
