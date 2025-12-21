@@ -16,6 +16,7 @@ public class Game
     /// </summary>    
     public static void tick(ReducerContext ctx, Module.GameTickSchedule gameTick)
     {
+        Timestamp now = ctx.Timestamp;
         // For each player, get all their player inputs and update their positions accordingly.
         foreach (var transform in ctx.Db.player_transform.Iter())
         {
@@ -28,6 +29,7 @@ public class Game
                 transform.position.z += inputRow.input.y * transform.moveSpeed;
                 transform.tick = gameTick.tick; 
                 transform.sequence = inputRow.sequence;
+                transform.timestamp = now;
                 ctx.Db.player_transform.player.Update(transform);
                 //Remove processed input
                 ctx.Db.player_input.id.Delete(inputRow.id);
