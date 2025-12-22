@@ -86,6 +86,7 @@ public static partial class Module
         public Identity player;
         public DbVector3 position;
         public float moveSpeed;
+        public float yaw;
         public Timestamp timestamp = new Timestamp();
         public UInt32 sequence = 0;
         public long tick = 0;
@@ -100,6 +101,7 @@ public static partial class Module
         [SpacetimeDB.Index.BTree(Name = "playerIndex")]
         public Identity player;
         public DbVector2 input;
+        public float yaw;
         public DbVector3 last_position;
         public UInt32 sequence = 0;
     }
@@ -113,6 +115,7 @@ public static partial class Module
         public string type = "";
         public DbVector3 position;
         public DbVector3 velocity;
+        public float yaw;
         public Timestamp timestamp = new Timestamp();
     }
 

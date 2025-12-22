@@ -27,6 +27,7 @@ public class Game
                 transform.position.x += inputRow.input.x * transform.moveSpeed;
                 transform.position.y += 0;
                 transform.position.z += inputRow.input.y * transform.moveSpeed;
+                transform.yaw = inputRow.yaw;
                 transform.tick = gameTick.tick; 
                 transform.sequence = inputRow.sequence;
                 transform.timestamp = now;
