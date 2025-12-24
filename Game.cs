@@ -20,6 +20,7 @@ public class Game
         // For each player, get all their player inputs and update their positions accordingly.
         foreach (var transform in ctx.Db.player_transform.Iter())
         {
+            transform.velocity = new DbVector3(0,0,0);
             IEnumerable<Module.PlayerInputRow> inputRows = ctx.Db.player_input.playerIndex.Filter(transform.player);
             foreach (var inputRow in inputRows)
             {
@@ -27,14 +28,16 @@ public class Game
                 transform.position.x += inputRow.input.x * transform.moveSpeed;
                 transform.position.y += 0;
                 transform.position.z += inputRow.input.y * transform.moveSpeed;
+                transform.velocity = new DbVector3(inputRow.input.x * transform.moveSpeed, 0, inputRow.input.y * transform.moveSpeed);
                 transform.yaw = inputRow.yaw;
                 transform.tick = gameTick.tick; 
                 transform.sequence = inputRow.sequence;
                 transform.timestamp = now;
-                ctx.Db.player_transform.player.Update(transform);
                 //Remove processed input
                 ctx.Db.player_input.id.Delete(inputRow.id);
             }
+             ctx.Db.player_transform.player.Update(transform);
+
         }
     }
 

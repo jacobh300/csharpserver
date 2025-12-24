@@ -85,6 +85,7 @@ public static partial class Module
         [SpacetimeDB.PrimaryKey]
         public Identity player;
         public DbVector3 position;
+        public DbVector3 velocity;
         public float moveSpeed;
         public float yaw;
         public Timestamp timestamp = new Timestamp();
