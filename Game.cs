@@ -39,6 +39,11 @@ public class Game
              ctx.Db.player_transform.player.Update(transform);
 
         }
+
+        // Update the game tick schedule
+        gameTick.lastExecuted = now;
+        gameTick.lastTick = gameTick.tick + 1;
+        ctx.Db.game_tick_schedule.id.Update(gameTick);
     }
 
 }
