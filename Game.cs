@@ -42,7 +42,7 @@ public class Game
 
         // Update the game tick schedule
         gameTick.lastExecuted = now;
-        gameTick.lastTick = gameTick.tick + 1;
+        gameTick.tick++;
         ctx.Db.game_tick_schedule.id.Update(gameTick);
     }
 
