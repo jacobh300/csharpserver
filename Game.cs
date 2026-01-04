@@ -27,7 +27,11 @@ public class Game
                 //Update player position based on input
                 transform.position.x += inputRow.input.x * transform.moveSpeed;
                 transform.position.z += inputRow.input.y * transform.moveSpeed;
-                transform.velocity.y = inputRow.jump ? 5.0f : transform.velocity.y;
+                if(transform.velocity.y == 0 && transform.position.y == 0) //Only allow jumping if not already jumping
+                {
+                    transform.velocity.y = inputRow.jump ? 0.5f : transform.velocity.y;  
+                }
+                
 
 
 
@@ -40,10 +44,10 @@ public class Game
                 ctx.Db.player_input.id.Delete(inputRow.id);
             }
 
-            if(transform.velocity.y != 0)
+            if(transform.velocity.y != 0 || transform.position.y > 0)
             {
                 //Apply gravity
-                transform.velocity.y -= 0.98f;
+                transform.velocity.y -= 0.03f;
                 transform.position.y += transform.velocity.y;
                 if(transform.position.y < 0)
                 {
