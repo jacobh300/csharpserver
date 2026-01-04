@@ -28,19 +28,6 @@ public class Game
                 transform.position.x += inputRow.input.x * transform.moveSpeed;
                 transform.position.z += inputRow.input.y * transform.moveSpeed;
                 transform.velocity.y = inputRow.jump ? 5.0f : transform.velocity.y;
-                transform.position.y += transform.velocity.y;
-
-
-                //Apply gravity and velocity
-                if(transform.position.y > 0)
-                {
-                    transform.velocity.y -= 9.81f * 0.033f; // Assuming 30 ticks per second
-                }
-                else
-                {
-                    transform.position.y = 0;
-                    transform.velocity.y = 0;
-                }
 
 
 
@@ -52,6 +39,19 @@ public class Game
                 //Remove processed input
                 ctx.Db.player_input.id.Delete(inputRow.id);
             }
+
+            if(transform.velocity.y != 0)
+            {
+                //Apply gravity
+                transform.velocity.y -= 0.98f;
+                transform.position.y += transform.velocity.y;
+                if(transform.position.y < 0)
+                {
+                    transform.position.y = 0;
+                    transform.velocity.y = 0;
+                }
+            }   
+
             ctx.Db.player_transform.player.Update(transform);
         }
 
