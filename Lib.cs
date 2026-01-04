@@ -102,6 +102,7 @@ public static partial class Module
         [SpacetimeDB.Index.BTree(Name = "playerIndex")]
         public Identity player;
         public DbVector2 input;
+        public bool jump;
         public float yaw;
         public DbVector3 last_position;
         public UInt32 sequence = 0;

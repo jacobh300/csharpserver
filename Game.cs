@@ -26,8 +26,24 @@ public class Game
             {
                 //Update player position based on input
                 transform.position.x += inputRow.input.x * transform.moveSpeed;
-                transform.position.y += 0;
                 transform.position.z += inputRow.input.y * transform.moveSpeed;
+                transform.velocity.y = inputRow.jump ? 5.0f : transform.velocity.y;
+                transform.position.y += transform.velocity.y;
+
+
+                //Apply gravity and velocity
+                if(transform.position.y > 0)
+                {
+                    transform.velocity.y -= 9.81f * 0.033f; // Assuming 30 ticks per second
+                }
+                else
+                {
+                    transform.position.y = 0;
+                    transform.velocity.y = 0;
+                }
+
+
+
                 //transform.velocity = new DbVector3(inputRow.input.x * transform.moveSpeed, 0, inputRow.input.y * transform.moveSpeed);
                 transform.yaw = inputRow.yaw;
                 transform.tick = gameTick.tick; 
