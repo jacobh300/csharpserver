@@ -16,6 +16,7 @@ public class Game
     public static void tick(ReducerContext ctx, Module.GameTickSchedule gameTick)
     {
         Timestamp now = ctx.Timestamp;
+        long deltaTime = (now.MicrosecondsSinceUnixEpoch - gameTick.lastExecuted.MicrosecondsSinceUnixEpoch);
         // For each player, get all their player inputs and update their positions accordingly.
         foreach (var transform in ctx.Db.player_transform.Iter())
         {
@@ -25,9 +26,9 @@ public class Game
             foreach (var inputRow in inputRows)
             {
                 //Update player position based on input
-                transform.position.x += inputRow.input.x * transform.moveSpeed;
+                transform.position.x += inputRow.input.x * transform.moveSpeed * (deltaTime / 1_000_000.0f);
                 transform.position.y += 0;
-                transform.position.z += inputRow.input.y * transform.moveSpeed;
+                transform.position.z += inputRow.input.y * transform.moveSpeed * (deltaTime / 1_000_000.0f);
                 //transform.velocity = new DbVector3(inputRow.input.x * transform.moveSpeed, 0, inputRow.input.y * transform.moveSpeed);
                 transform.yaw = inputRow.yaw;
                 transform.tick = gameTick.tick; 
