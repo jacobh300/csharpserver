@@ -26,6 +26,7 @@ public class Game
             foreach (var inputRow in inputRows)
             {
                 //Update player position based on input
+                Log.Info("Moving player at speed: " + (inputRow.input.x * transform.moveSpeed * (deltaTime / 1_000_000.0f)) + ", " + (inputRow.input.y * transform.moveSpeed * (deltaTime / 1_000_000.0f)));
                 transform.position.x += inputRow.input.x * transform.moveSpeed * (deltaTime / 1_000_000.0f);
                 transform.position.y += 0;
                 transform.position.z += inputRow.input.y * transform.moveSpeed * (deltaTime / 1_000_000.0f);
