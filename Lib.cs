@@ -1,3 +1,4 @@
+using System.Numerics;
 using SpacetimeDB;
 #pragma warning disable STDB_UNSTABLE
 
@@ -79,13 +80,29 @@ public static partial class Module
         public long lastSecondTick;
     }
 
+    [Table(Name = "player_move_updates", Public = true)]
+    public partial class PlayerMoveUpdate
+    {
+        [SpacetimeDB.PrimaryKey]
+        public Identity player;
+        public MoveStateType moveType; 
+        public DbVector3 origin;
+        public DbVector3 destination;
+        public DbVector3 velocity;
+        public long timestamp;
+        public float duration;
+
+        public DbVector3 lastValidPosition;
+        public int suspiciousActivityCount;
+    }
+
     [Table(Name = "player_transform", Public = true)]
     public partial class PlayerTransformRow
     {
         [SpacetimeDB.PrimaryKey]
         public Identity player;
         public DbVector3 position;
-        public DbVector3 velocity;
+        public DbVector2 input;
         public float moveSpeed;
         public float yaw;
         public Timestamp timestamp = new Timestamp();

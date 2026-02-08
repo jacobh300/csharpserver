@@ -1,0 +1,16 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Spacetime Publish Sandbox",
+      "type": "shell",
+      "command": "spacetime publish sandbox",
+      "args": ["--project-path", "${workspaceFolder}"],
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}

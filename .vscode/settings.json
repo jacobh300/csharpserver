@@ -1,4 +1,12 @@
 {
     "spacetimedb.lastUsedModulePath": "./server",
-    "spacetimedb.lastUsedOutputPath": "..\\client\\module_bindings"
+    "spacetimedb.lastUsedOutputPath": "..\\client\\module_bindings",
+    "emeraldwalk.runonsave": {
+    "commands": [
+      {
+        "match": ".*\\.cs$",
+        "cmd": "spacetime publish sandbox"
+      }
+    ]
+  }
 }
