@@ -87,14 +87,13 @@ public static partial class Module
         public Identity player;
         public MoveStateType moveType; 
         public DbVector3 origin;
-        public DbVector3 destination;
         public DbVector3 velocity;
+        public float yaw;
         /// <summary>
         /// In microseconds.
         /// </summary>
         public long timestamp;
         public float duration;
-
         public DbVector3 lastValidPosition;
         public int suspiciousActivityCount;
     }

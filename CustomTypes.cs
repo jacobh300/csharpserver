@@ -89,8 +89,8 @@ public partial struct DbVector2
 public partial struct PlayerMoveRequest
 {
     public DbVector3 origin;
-    public DbVector3 destination;
     public DbVector3 velocity;
+    public float yaw;
     public long timestamp;
     public float duration;
 }

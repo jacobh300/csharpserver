@@ -22,15 +22,9 @@ public partial class MoveUpdate : ReducerCommand
         _moveType = moveType;
     }
 
-    //The way the system works:
-    //Client reports what happened for them then the server validates.
     protected override void run()
     {
-        
-        // Get last known state
-        var lastState = _ctx.Db.player_move_updates.player.Find(_user.Id);
-        //Log.Info($"Received move update from player {_user.Id}: {_moveType} to {_moveUpdate.origin} with velocity {_moveUpdate.velocity}");
-        if (lastState == null)
+        if (_lastMoveUpdate == null)
         {
             // First move - just accept it
             _ctx.Db.player_move_updates.Insert(new Module.PlayerMoveUpdate
@@ -49,16 +43,33 @@ public partial class MoveUpdate : ReducerCommand
         // Convert to PlayerMoveUpdate for validation
         var lastUpdate = new Module.PlayerMoveUpdate
         {
-            player = lastState.player,
-            origin = lastState.origin,
-            velocity = lastState.velocity,
-            moveType = lastState.moveType,
-            timestamp = lastState.timestamp
+            player = _lastMoveUpdate.player,
+            origin = _lastMoveUpdate.origin,
+            velocity = _lastMoveUpdate.velocity,
+            moveType = _lastMoveUpdate.moveType,
+            timestamp = _lastMoveUpdate.timestamp
         };
+
+        // Simple check to see if the player is standing still
+        if (_moveType == lastUpdate.moveType && _moveUpdate.origin.Equals(lastUpdate.origin))
+        {
+            // No movement - just update timestamp
+            _ctx.Db.player_move_updates.player.Update(new Module.PlayerMoveUpdate
+            {
+                player = _user.Id,
+                origin = _lastMoveUpdate.origin,
+                velocity = new DbVector3(0, 0, 0),
+                moveType = _moveType,
+                yaw = _moveUpdate.yaw,
+                timestamp = _ctx.Timestamp.MicrosecondsSinceUnixEpoch,
+                lastValidPosition = _lastMoveUpdate.lastValidPosition,
+                suspiciousActivityCount = _lastMoveUpdate.suspiciousActivityCount
+            });
+            return;
+        }
         
         // VALIDATE
         var result = MoveValidator.Validate(_moveType, _moveUpdate, lastUpdate);
-        
         if (result.IsValid)
         {
             // Accept movement
@@ -68,21 +79,20 @@ public partial class MoveUpdate : ReducerCommand
                 origin = _moveUpdate.origin,
                 velocity = _moveUpdate.velocity,
                 moveType = _moveType,
+                yaw = _moveUpdate.yaw,
                 timestamp = _moveUpdate.timestamp,
                 lastValidPosition = _moveUpdate.origin,  // Update last valid
                 suspiciousActivityCount = 0  // Reset counter
             });
-            
-            //Log.Info($"Player {_user.Id} moved to {_moveUpdate.origin}");
         }
         else
         {
             // REJECT - log and potentially ban
-            lastState.suspiciousActivityCount++;
+            _lastMoveUpdate.suspiciousActivityCount++;
             
             Log.Warn($"Player {_user.Id} failed validation: {result.ErrorMessage}");
             
-            if (lastState.suspiciousActivityCount > 10 && false) // Disable ban for now
+            if (_lastMoveUpdate.suspiciousActivityCount > 10 && false) // Disable ban for now
             {
                 // Ban player
                 Log.Error($"Player {_user.Id} BANNED for repeated exploits");
@@ -94,12 +104,13 @@ public partial class MoveUpdate : ReducerCommand
             _ctx.Db.player_move_updates.player.Update(new Module.PlayerMoveUpdate
             {
                 player = _user.Id,
-                origin = lastState.lastValidPosition,  // Reset position
+                origin = _lastMoveUpdate.lastValidPosition,  // Reset position
                 velocity = new DbVector3(0, 0, 0),     // Zero velocity
                 moveType = MoveStateType.Idle,         // Force idle
+                yaw = _lastMoveUpdate.yaw,             // Reset yaw
                 timestamp = _ctx.Timestamp.MicrosecondsSinceUnixEpoch,
-                lastValidPosition = lastState.lastValidPosition,
-                suspiciousActivityCount = lastState.suspiciousActivityCount
+                lastValidPosition = _lastMoveUpdate.lastValidPosition,
+                suspiciousActivityCount = _lastMoveUpdate.suspiciousActivityCount
             });
         }
     } 
