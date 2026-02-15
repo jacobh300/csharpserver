@@ -89,6 +89,9 @@ public static partial class Module
         public DbVector3 origin;
         public DbVector3 destination;
         public DbVector3 velocity;
+        /// <summary>
+        /// In microseconds.
+        /// </summary>
         public long timestamp;
         public float duration;
 

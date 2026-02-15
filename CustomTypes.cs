@@ -19,6 +19,11 @@ public partial struct DbVector3
         return new DbVector3(a.x + b.x, a.y + b.y, a.z + b.z);
     }
 
+    public static DbVector3 operator -(DbVector3 a, DbVector3 b)
+    {
+        return new DbVector3(a.x - b.x, a.y - b.y, a.z - b.z);
+    }
+
     public static DbVector3 operator *(DbVector3 v, float scalar)
     {
         return new DbVector3(v.x * scalar, v.y * scalar, v.z * scalar);
@@ -27,6 +32,11 @@ public partial struct DbVector3
     public static DbVector3 operator *(float scalar, DbVector3 v)
     {
         return new DbVector3(v.x * scalar, v.y * scalar, v.z * scalar);
+    }
+
+    public static DbVector3 operator /(DbVector3 v, float scalar)
+    {
+        return new DbVector3(v.x / scalar, v.y / scalar, v.z / scalar);
     }
 
     public float magnitude => (float)System.Math.Sqrt(x * x + y * y + z * z);

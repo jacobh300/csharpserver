@@ -1,6 +1,7 @@
 using SpacetimeDB;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 // ============================================================================
 // TEMPLATE-BASED STATE VALIDATION SYSTEM
@@ -102,7 +103,7 @@ public static class MovementConstants
     
     // Airborne movement
     public const float JUMP_IMPULSE = 5.0f;
-    public const float JUMP_IMPULSE_TOLERANCE = 3.0f;
+    public const float JUMP_IMPULSE_TOLERANCE = 0.5f;
     public const float JUMP_HORIZONTAL_BOOST = 1.0f;
     public const float MAX_AIRBORNE_HORIZONTAL_SPEED = 13.0f;
     public const float TERMINAL_VELOCITY = 25.0f;
@@ -131,6 +132,13 @@ public static class ValidationHelpers
     public static bool IsAirborne(MoveStateType state)
     {
         return state == MoveStateType.Jump || state == MoveStateType.Fall;
+    }
+
+    public static float GetHorizontalDistance(DbVector3 a, DbVector3 b)
+    {
+        float dx = a.x - b.x;
+        float dz = a.z - b.z;
+        return (float)System.Math.Sqrt(dx * dx + dz * dz);
     }
 }
 
@@ -259,13 +267,25 @@ public class RunValidator : IMoveStateValidator
         {
             return new ValidationResult(false, $"Run but Y={moveRequest.origin.y:F2} (not grounded)");
         }
-        
-        // Speed should be within run limits
-        float horizontalSpeed = ValidationHelpers.GetHorizontalSpeed(moveRequest.velocity);
-        if (horizontalSpeed > MovementConstants.MAX_RUN_SPEED)
+        float timeSinceLast = (moveRequest.timestamp - last.timestamp) / 1000.0f / 1000.0f; // convert µs to seconds
+        //Validate that the velocity is proper
+        //float horizontalSpeed = ValidationHelpers.GetHorizontalSpeed(moveRequest.velocity);
+        //if (Math.Round(horizontalSpeed, 4) > MovementConstants.MAX_RUN_SPEED)
+        //{
+        //    return new ValidationResult(false,
+        //        $"Run speed {horizontalSpeed:F4} m/s exceeds max {MovementConstants.MAX_RUN_SPEED:F4} m/s");
+        //}
+
+
+        // Origin and Velocity are both sent from the client so we need to ensure velocity is consistent with change in position since last update to prevent teleporting
+        // We can take the previous position and new position and take the time since those updates to calculate how long it would take to get there based on the expected velocity during run
+        // Expected time to get to the new position based on max run speed
+        float expectedTime = ValidationHelpers.GetHorizontalDistance(last.origin, moveRequest.origin) / MovementConstants.MAX_RUN_SPEED;
+        Log.Info($"Run validation: distance={ValidationHelpers.GetHorizontalDistance(last.origin, moveRequest.origin):F2} m, timeSinceLast={timeSinceLast:F2} s, expectedTime={expectedTime:F2} s");
+        if (timeSinceLast < expectedTime - 0.01f) // allow small tolerance for network jitter
         {
             return new ValidationResult(false,
-                $"Run speed {horizontalSpeed:F2} m/s exceeds max {MovementConstants.MAX_RUN_SPEED:F2} m/s");
+                $"Position update too fast for Run: time since last {timeSinceLast:F2}s, expected minimum {expectedTime:F2}s");
         }
         
         return new ValidationResult(true);
@@ -297,6 +317,14 @@ public class JumpValidator : IMoveStateValidator
             {
                 return new ValidationResult(false,
                     $"Jump gained too much horizontal speed: {currentHorizontal:F2} m/s (max: {maxAllowed:F2} m/s)");
+            }
+
+            // We need to do a similar check for position to prevent jump teleporting - we can calculate the expected position based on the jump impulse and time since last update and ensure the new position is within a reasonable distance of that
+            float timeSinceLast = (moveRequest.timestamp - last.timestamp) / 1000.0f / 1000.0f; // convert µs to seconds
+            float expectedY = last.origin.y + MovementConstants.JUMP_IMPULSE * timeSinceLast + 0.5f * MovementConstants.GRAVITY * timeSinceLast * timeSinceLast;
+            if (Math.Abs(moveRequest.origin.y - expectedY) > 0.5f) // allow some tolerance for player movement and network jitter
+            {                return new ValidationResult(false,
+                    $"Jump position Y={moveRequest.origin.y:F2} too far from expected Y={expectedY:F2} based on jump physics");
             }
             
             return new ValidationResult(true);
