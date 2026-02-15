@@ -29,7 +29,7 @@ public partial class MoveUpdate : ReducerCommand
         
         // Get last known state
         var lastState = _ctx.Db.player_move_updates.player.Find(_user.Id);
-        Log.Info($"Received move update from player {_user.Id}: {_moveType} to {_moveUpdate.origin} with velocity {_moveUpdate.velocity}");
+        //Log.Info($"Received move update from player {_user.Id}: {_moveType} to {_moveUpdate.origin} with velocity {_moveUpdate.velocity}");
         if (lastState == null)
         {
             // First move - just accept it

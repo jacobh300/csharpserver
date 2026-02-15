@@ -293,7 +293,7 @@ public class JumpValidator : IMoveStateValidator
             float lastHorizontal = ValidationHelpers.GetHorizontalSpeed(last.velocity);
             float maxAllowed = lastHorizontal + MovementConstants.JUMP_HORIZONTAL_BOOST;
             
-            if (currentHorizontal > maxAllowed)
+            if (currentHorizontal > maxAllowed && false) // disable horizontal gain check for jump since some games allow it
             {
                 return new ValidationResult(false,
                     $"Jump gained too much horizontal speed: {currentHorizontal:F2} m/s (max: {maxAllowed:F2} m/s)");
@@ -304,7 +304,7 @@ public class JumpValidator : IMoveStateValidator
         else if (fromState == MoveStateType.Fall)
         {
             // Can transition Fall → Jump if going upward (shouldn't normally happen but allow it)
-            return new ValidationResult(true);
+            return new ValidationResult(false, "Jump from Fall not allowed in current implementation");
         }
         
         return new ValidationResult(false, $"Invalid transition: {fromState} → Jump");
@@ -413,7 +413,7 @@ public class FallValidator : IMoveStateValidator
             float lastHorizontal = ValidationHelpers.GetHorizontalSpeed(last.velocity);
             float gainedSpeed = horizontalSpeed - lastHorizontal;
             
-            if (gainedSpeed > MovementConstants.AIRBORNE_HORIZONTAL_GAIN_TOLERANCE)
+            if (gainedSpeed > MovementConstants.AIRBORNE_HORIZONTAL_GAIN_TOLERANCE && false) // disable horizontal gain check for fall since some games allow it
             {
                 return new ValidationResult(false,
                     $"Fall gained {gainedSpeed:F2} m/s horizontal speed (can't accelerate in air)");
