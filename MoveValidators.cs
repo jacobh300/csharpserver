@@ -11,16 +11,16 @@ using System.Diagnostics;
 //   2. Movement Rules - What are the physics constraints while in this state?
 //
 // To add a new state:
-//   1. Create a class implementing IMoveStateValidator
-//   2. Define CanEnterState() and ValidateMovement()
+//   1. Create a class inheriting from BaseMoveStateValidator
+//   2. Define CanEnterState() and ValidateMovement() (and optionally ValidateBasic() if you need overridden basic validation)
 //   3. Register it in MoveStateValidatorRegistry
 // ============================================================================
 
 /// <summary>
-/// Template interface for state-specific validation logic.
-/// Each MoveStateType should have its own validator implementing this.
+/// Base class for state-specific validation logic.
+/// Each MoveStateType should have its own validator inheriting from this.
 /// </summary>
-public interface IMoveStateValidator
+public abstract class BaseMoveStateValidator
 {
     /// <summary>
     /// Check if we can enter this state from the last state.
@@ -29,7 +29,7 @@ public interface IMoveStateValidator
     /// <param name="moveRequest">The requested move data</param>
     /// <param name="last">The last validated move update</param>
     /// <returns>Validation result</returns>
-    ValidationResult CanEnterState(MoveStateType fromState, PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last);
+    public abstract ValidationResult CanEnterState(MoveStateType fromState, PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last);
     
     /// <summary>
     /// Validate movement physics while in this state.
@@ -37,7 +37,13 @@ public interface IMoveStateValidator
     /// <param name="moveRequest">The requested move data</param>
     /// <param name="last">The last validated move update</param>
     /// <returns>Validation result</returns>
-    ValidationResult ValidateMovement(PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last);
+    public abstract ValidationResult ValidateMovement(PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last);
+
+    public virtual ValidationResult ValidateBasic(PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
+    {
+        // TODO: Implement any basic validation that should apply to all states (e.g. max speed limit regardless of state)
+        return new ValidationResult(true);
+    }
 }
 
 /// <summary>
@@ -53,6 +59,13 @@ public static class MoveValidator
         // Get the validator for the requested state
         var validator = MoveStateValidatorRegistry.GetValidator(moveType);
         
+        //Do basic validation that applies to all states (e.g. max speed limit)
+        var basicCheck = validator.ValidateBasic(moveRequest, last);
+        if (!basicCheck.IsValid)
+        {
+            return basicCheck;
+        }
+
         // Check if we can enter this state
         if (moveType != last.moveType)
         {
@@ -75,7 +88,7 @@ public static class MoveValidator
 /// </summary>
 public static class MoveStateValidatorRegistry
 {
-    private static readonly Dictionary<MoveStateType, IMoveStateValidator> _validators = new()
+    private static readonly Dictionary<MoveStateType, BaseMoveStateValidator> _validators = new()
     {
         [MoveStateType.Idle] = new IdleValidator(),
         [MoveStateType.Walk] = new WalkValidator(),
@@ -84,7 +97,7 @@ public static class MoveStateValidatorRegistry
         [MoveStateType.Fall] = new FallValidator(),
     };
     
-    public static IMoveStateValidator GetValidator(MoveStateType moveType)
+    public static BaseMoveStateValidator GetValidator(MoveStateType moveType)
     {
         return _validators[moveType];
     }
@@ -146,9 +159,9 @@ public static class ValidationHelpers
 // STATE VALIDATORS
 // ============================================================================
 
-public class IdleValidator : IMoveStateValidator
+public class IdleValidator : BaseMoveStateValidator
 {
-    public ValidationResult CanEnterState(MoveStateType fromState, PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
+    public override ValidationResult CanEnterState(MoveStateType fromState, PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
     {
         // Can idle from any grounded state, or from landing
         if (ValidationHelpers.IsGrounded(fromState) || ValidationHelpers.IsAirborne(fromState))
@@ -175,7 +188,7 @@ public class IdleValidator : IMoveStateValidator
         return new ValidationResult(false, $"Invalid transition: {fromState} → Idle");
     }
     
-    public ValidationResult ValidateMovement(PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
+    public override ValidationResult ValidateMovement(PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
     {
         // Should be on ground
         if (moveRequest.origin.y > MovementConstants.MAX_GROUND_HEIGHT)
@@ -194,9 +207,9 @@ public class IdleValidator : IMoveStateValidator
     }
 }
 
-public class WalkValidator : IMoveStateValidator
+public class WalkValidator : BaseMoveStateValidator
 {
-    public ValidationResult CanEnterState(MoveStateType fromState, PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
+    public override ValidationResult CanEnterState(MoveStateType fromState, PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
     {
         // Can walk from any grounded state, or from landing
         if (ValidationHelpers.IsGrounded(fromState) || ValidationHelpers.IsAirborne(fromState))
@@ -217,7 +230,7 @@ public class WalkValidator : IMoveStateValidator
         return new ValidationResult(false, $"Invalid transition: {fromState} → Walk");
     }
     
-    public ValidationResult ValidateMovement(PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
+    public override ValidationResult ValidateMovement(PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
     {
         // Should be on ground
         if (moveRequest.origin.y > MovementConstants.MAX_GROUND_HEIGHT)
@@ -237,9 +250,9 @@ public class WalkValidator : IMoveStateValidator
     }
 }
 
-public class RunValidator : IMoveStateValidator
+public class RunValidator : BaseMoveStateValidator
 {
-    public ValidationResult CanEnterState(MoveStateType fromState, PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
+    public override ValidationResult CanEnterState(MoveStateType fromState, PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
     {
         // Can run from any grounded state, or from landing
         if (ValidationHelpers.IsGrounded(fromState) || ValidationHelpers.IsAirborne(fromState))
@@ -260,7 +273,7 @@ public class RunValidator : IMoveStateValidator
         return new ValidationResult(false, $"Invalid transition: {fromState} → Run");
     }
     
-    public ValidationResult ValidateMovement(PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
+    public override ValidationResult ValidateMovement(PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
     {
         // Should be on ground
         if (moveRequest.origin.y > MovementConstants.MAX_GROUND_HEIGHT)
@@ -292,9 +305,9 @@ public class RunValidator : IMoveStateValidator
     }
 }
 
-public class JumpValidator : IMoveStateValidator
+public class JumpValidator : BaseMoveStateValidator
 {
-    public ValidationResult CanEnterState(MoveStateType fromState, PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
+    public override ValidationResult CanEnterState(MoveStateType fromState, PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
     {
         // Can jump from grounded states or continue from Fall (changing direction upward)
         if (ValidationHelpers.IsGrounded(fromState))
@@ -338,7 +351,7 @@ public class JumpValidator : IMoveStateValidator
         return new ValidationResult(false, $"Invalid transition: {fromState} → Jump");
     }
     
-    public ValidationResult ValidateMovement(PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
+    public override ValidationResult ValidateMovement(PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
     {
         // Must be going upward
         if (moveRequest.velocity.y <= 0)
@@ -377,9 +390,9 @@ public class JumpValidator : IMoveStateValidator
     }
 }
 
-public class FallValidator : IMoveStateValidator
+public class FallValidator : BaseMoveStateValidator
 {
-    public ValidationResult CanEnterState(MoveStateType fromState, PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
+    public override ValidationResult CanEnterState(MoveStateType fromState, PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
     {
         // Can fall from any airborne state or from grounded states (walked off edge)
         if (ValidationHelpers.IsAirborne(fromState) || ValidationHelpers.IsGrounded(fromState))
@@ -412,7 +425,7 @@ public class FallValidator : IMoveStateValidator
         return new ValidationResult(false, $"Invalid transition: {fromState} → Fall");
     }
     
-    public ValidationResult ValidateMovement(PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
+    public override ValidationResult ValidateMovement(PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
     {
         // Must be going downward
         if (moveRequest.velocity.y > 0)
