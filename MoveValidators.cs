@@ -183,10 +183,11 @@ public static class ValidationHelpers
         return new ValidationResult(true);
     }
 
-    public static ValidationResult ValidateHorizontalMove(Module.PlayerMoveUpdate last, PlayerMoveRequest moveRequest, float maxSpeedForMovement, float tolerance = 0.01f)
+    public static ValidationResult ValidateHorizontalMove(Module.PlayerMoveUpdate last, PlayerMoveRequest moveRequest, float maxSpeedForMovement, float tolerance = 0.05f)
     {
         float timeSinceLast = (moveRequest.timestamp - last.timestamp) / 1000.0f / 1000.0f; // convert µs to seconds
         float expectedTime = ValidationHelpers.GetHorizontalDistance(last.origin, moveRequest.origin) / maxSpeedForMovement;
+        // Tolerance will allow the player to move 0.05 seconds
         if (timeSinceLast < expectedTime - tolerance) // allow small tolerance for network jitter
         {
             return new ValidationResult(false,
