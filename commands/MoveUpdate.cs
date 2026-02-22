@@ -35,7 +35,7 @@ public partial class MoveUpdate : ReducerCommand
                 moveType = _moveType,
                 timestamp = _moveUpdate.timestamp,
                 lastValidPosition = _moveUpdate.origin,
-                suspiciousActivityCount = 0
+                suspiciousActivityCount = 0,
             });
             return;
         }
@@ -47,7 +47,7 @@ public partial class MoveUpdate : ReducerCommand
             origin = _lastMoveUpdate.origin,
             velocity = _lastMoveUpdate.velocity,
             moveType = _lastMoveUpdate.moveType,
-            timestamp = _lastMoveUpdate.timestamp
+            timestamp = _lastMoveUpdate.timestamp,
         };
 
         // Simple check to see if the player is standing still
@@ -61,7 +61,7 @@ public partial class MoveUpdate : ReducerCommand
                 velocity = new DbVector3(0, 0, 0),
                 moveType = _moveType,
                 yaw = _moveUpdate.yaw,
-                timestamp = _ctx.Timestamp.MicrosecondsSinceUnixEpoch,
+                timestamp = _moveUpdate.timestamp,
                 lastValidPosition = _lastMoveUpdate.lastValidPosition,
                 suspiciousActivityCount = _lastMoveUpdate.suspiciousActivityCount
             });
@@ -69,10 +69,11 @@ public partial class MoveUpdate : ReducerCommand
         }
         
         // VALIDATE
-        var result = MoveValidator.Validate(_moveType, _moveUpdate, lastUpdate);
+        var result = MoveValidator.Validate(_moveType, _moveUpdate, lastUpdate, _ctx.Timestamp);
         if (result.IsValid)
         {
             // Accept movement
+            Log.Info($"Player {_user.Id} move validated successfully: moveType={_moveType}, origin=({_moveUpdate.origin.x:F2}, {_moveUpdate.origin.y:F2}, {_moveUpdate.origin.z:F2}), velocity=({_moveUpdate.velocity.x:F2}, {_moveUpdate.velocity.y:F2}, {_moveUpdate.velocity.z:F2})");
             _ctx.Db.player_move_updates.player.Update(new Module.PlayerMoveUpdate
             {
                 player = _user.Id,
@@ -87,6 +88,14 @@ public partial class MoveUpdate : ReducerCommand
         }
         else
         {
+            if(result.SilentDrop)
+            {
+                // This is triggered when we get a timestamp thats older then the previous 
+                // this shouldn't happen though because we are TCP connected.
+                Log.Warn($"Player {_user.Id} move failed validation but marked as silent drop: {result.ErrorMessage}");
+                return;
+            }
+
             // REJECT - log and potentially ban
             _lastMoveUpdate.suspiciousActivityCount++;
             
@@ -104,11 +113,11 @@ public partial class MoveUpdate : ReducerCommand
             _ctx.Db.player_move_updates.player.Update(new Module.PlayerMoveUpdate
             {
                 player = _user.Id,
-                origin = _lastMoveUpdate.lastValidPosition,  // Reset position
+                origin = _lastMoveUpdate.origin,  // Reset position
                 velocity = new DbVector3(0, 0, 0),     // Zero velocity
-                moveType = MoveStateType.Idle,         // Force idle
+                moveType = _lastMoveUpdate.moveType,   
                 yaw = _lastMoveUpdate.yaw,             // Reset yaw
-                timestamp = _ctx.Timestamp.MicrosecondsSinceUnixEpoch,
+                timestamp = _moveUpdate.timestamp,
                 lastValidPosition = _lastMoveUpdate.lastValidPosition,
                 suspiciousActivityCount = _lastMoveUpdate.suspiciousActivityCount
             });

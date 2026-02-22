@@ -2,6 +2,7 @@ using SpacetimeDB;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Numerics;
 
 // ============================================================================
 // TEMPLATE-BASED STATE VALIDATION SYSTEM
@@ -39,10 +40,10 @@ public abstract class BaseMoveStateValidator
     /// <returns>Validation result</returns>
     public abstract ValidationResult ValidateMovement(PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last);
 
-    public virtual ValidationResult ValidateBasic(PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
+    public virtual ValidationResult ValidateBasic(PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last, Timestamp serverNow)
     {
-        // TODO: Implement any basic validation that should apply to all states (e.g. max speed limit regardless of state)
-        return new ValidationResult(true);
+        //Validate timestamp
+        return ValidationHelpers.ValidateTimestamp(last.timestamp, moveRequest.timestamp, serverNow);
     }
 }
 
@@ -54,13 +55,13 @@ public static class MoveValidator
     public static ValidationResult Validate(
         MoveStateType moveType,
         PlayerMoveRequest moveRequest,
-        Module.PlayerMoveUpdate last)
+        Module.PlayerMoveUpdate last, Timestamp serverNow)
     {
         // Get the validator for the requested state
         var validator = MoveStateValidatorRegistry.GetValidator(moveType);
         
         //Do basic validation that applies to all states (e.g. max speed limit)
-        var basicCheck = validator.ValidateBasic(moveRequest, last);
+        var basicCheck = validator.ValidateBasic(moveRequest, last, serverNow);
         if (!basicCheck.IsValid)
         {
             return basicCheck;
@@ -109,6 +110,9 @@ public static class MoveStateValidatorRegistry
 
 public static class MovementConstants
 {
+    // Basic validation
+    public const float MAX_MOVE_DISTANCE = 50.0f; // move requests shouldn't be able to move more than this distance from last update in a single tick (prevents teleporting)
+
     // Grounded movement
     public const float MAX_WALK_SPEED = 6.0f;
     public const float MAX_RUN_SPEED = 12.0f;
@@ -128,6 +132,7 @@ public static class MovementConstants
     
     // Physics
     public const float GRAVITY = -9.81f;
+    public const float RUN_SPEED_VELOCITY = 12.0f;
 }
 
 public static class ValidationHelpers
@@ -152,6 +157,42 @@ public static class ValidationHelpers
         float dx = a.x - b.x;
         float dz = a.z - b.z;
         return (float)System.Math.Sqrt(dx * dx + dz * dz);
+    }
+    public static ValidationResult ValidateTimestamp(long lastTimestamp, long currentTimestamp, Timestamp serverNow)
+    {
+        int MAX_OFFSET_IN_PAST = 5000;
+        int MAX_OFFSET_IN_FUTURE = 1000;
+
+        if (currentTimestamp > serverNow.MicrosecondsSinceUnixEpoch + MAX_OFFSET_IN_FUTURE * 1000)
+        {
+            Log.Exception($"Timestamp validation failed: currentTimestamp {currentTimestamp} is too far in the future compared to server time {serverNow.MicrosecondsSinceUnixEpoch}");
+            return new ValidationResult(false, "Timestamp is too far in the future");
+        }
+
+        if (currentTimestamp < serverNow.MicrosecondsSinceUnixEpoch - MAX_OFFSET_IN_PAST * 1000)
+        {
+            Log.Exception($"Timestamp validation failed: currentTimestamp {currentTimestamp} is too far in the past compared to server time {serverNow.MicrosecondsSinceUnixEpoch}");
+            return new ValidationResult(false, "Timestamp is too far in the past");
+        }
+
+        if (currentTimestamp <= lastTimestamp)
+        {
+            Log.Exception($"Timestamp validation failed: currentTimestamp {currentTimestamp} <= lastTimestamp {lastTimestamp}");
+            return new ValidationResult(false, "Timestamp is not greater than last timestamp", true);
+        }
+        return new ValidationResult(true);
+    }
+
+    public static ValidationResult ValidateHorizontalMove(Module.PlayerMoveUpdate last, PlayerMoveRequest moveRequest, float maxSpeedForMovement, float tolerance = 0.01f)
+    {
+        float timeSinceLast = (moveRequest.timestamp - last.timestamp) / 1000.0f / 1000.0f; // convert µs to seconds
+        float expectedTime = ValidationHelpers.GetHorizontalDistance(last.origin, moveRequest.origin) / maxSpeedForMovement;
+        if (timeSinceLast < expectedTime - tolerance) // allow small tolerance for network jitter
+        {
+            return new ValidationResult(false,
+                $"Moved too quick, time since last {timeSinceLast:F2}s, expected minimum {expectedTime:F2} time for move.");
+        }
+        return new ValidationResult(true);
     }
 }
 
@@ -267,7 +308,7 @@ public class RunValidator : BaseMoveStateValidator
                 }
             }
             
-            return new ValidationResult(true);
+            return ValidationHelpers.ValidateHorizontalMove(last, moveRequest, MovementConstants.RUN_SPEED_VELOCITY);
         }
         
         return new ValidationResult(false, $"Invalid transition: {fromState} → Run");
@@ -280,28 +321,8 @@ public class RunValidator : BaseMoveStateValidator
         {
             return new ValidationResult(false, $"Run but Y={moveRequest.origin.y:F2} (not grounded)");
         }
-        float timeSinceLast = (moveRequest.timestamp - last.timestamp) / 1000.0f / 1000.0f; // convert µs to seconds
-        //Validate that the velocity is proper
-        //float horizontalSpeed = ValidationHelpers.GetHorizontalSpeed(moveRequest.velocity);
-        //if (Math.Round(horizontalSpeed, 4) > MovementConstants.MAX_RUN_SPEED)
-        //{
-        //    return new ValidationResult(false,
-        //        $"Run speed {horizontalSpeed:F4} m/s exceeds max {MovementConstants.MAX_RUN_SPEED:F4} m/s");
-        //}
 
-
-        // Origin and Velocity are both sent from the client so we need to ensure velocity is consistent with change in position since last update to prevent teleporting
-        // We can take the previous position and new position and take the time since those updates to calculate how long it would take to get there based on the expected velocity during run
-        // Expected time to get to the new position based on max run speed
-        float expectedTime = ValidationHelpers.GetHorizontalDistance(last.origin, moveRequest.origin) / MovementConstants.MAX_RUN_SPEED;
-        Log.Info($"Run validation: distance={ValidationHelpers.GetHorizontalDistance(last.origin, moveRequest.origin):F2} m, timeSinceLast={timeSinceLast:F2} s, expectedTime={expectedTime:F2} s");
-        if (timeSinceLast < expectedTime - 0.01f) // allow small tolerance for network jitter
-        {
-            return new ValidationResult(false,
-                $"Position update too fast for Run: time since last {timeSinceLast:F2}s, expected minimum {expectedTime:F2}s");
-        }
-        
-        return new ValidationResult(true);
+        return ValidationHelpers.ValidateHorizontalMove(last, moveRequest, MovementConstants.RUN_SPEED_VELOCITY);
     }
 }
 

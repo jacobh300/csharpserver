@@ -91,6 +91,9 @@ public partial struct PlayerMoveRequest
     public DbVector3 origin;
     public DbVector3 velocity;
     public float yaw;
+    /// <summary>
+    /// Unix timestamp in microseconds when the move was initiated on the client.
+    /// </summary>
     public long timestamp;
     public float duration;
 }
@@ -116,10 +119,12 @@ public class ValidationResult
 {
     public bool IsValid;
     public string ErrorMessage;
+    public bool SilentDrop = false;
 
-    public ValidationResult(bool isValid, string errorMessage = "")
+    public ValidationResult(bool isValid, string errorMessage = "", bool silentDrop = false)
     {
         IsValid = isValid;
         ErrorMessage = errorMessage;
+        SilentDrop = silentDrop;
     }
 }
