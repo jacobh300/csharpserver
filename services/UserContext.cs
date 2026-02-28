@@ -17,7 +17,7 @@ public class UserContext
     public Identity Id { get { return _id; } }
     private Dictionary<int, Module.ItemRow> _items
     {
-        get { return _ctx.Db.item.OwnerIndex.Filter(_ctx.Sender).ToDictionary(item => item.item_type_id, item => item); }
+        get { return _ctx.Db.ItemRow.owner.Filter(_ctx.Sender).ToDictionary(item => item.item_type_id, item => item); }
     }
 
     public Dictionary<int, Module.ItemRow> ItemRows

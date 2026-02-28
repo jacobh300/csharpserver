@@ -44,7 +44,7 @@ public partial class CreateDummyPlayer : ReducerCommand
             z = _direction.y
         };
 
-        _ctx.Db.entity_transform.Insert(newEntity);
+        _ctx.Db.EntityTransformRow.Insert(newEntity);
         respond($"Created Dummy Player Entity with ID: {newEntity.id}");
     }
 

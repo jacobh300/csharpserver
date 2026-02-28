@@ -37,9 +37,9 @@ public partial class MovePlayer : ReducerCommand
         inputRow.player = _user.Id;
         inputRow.input = DbVector2.normalize(_direction);
         inputRow.yaw = _yaw;
-        inputRow.last_position = _ctx.Db.player_transform.player.Find(_user.Id)?.position ?? new DbVector3(0,0,0);
+        inputRow.last_position = _ctx.Db.PlayerTransformRow.player.Find(_user.Id)?.position ?? new DbVector3(0,0,0);
         inputRow.sequence = _sequence;
-        _ctx.Db.player_input.Insert(inputRow);
+        _ctx.Db.PlayerInputRow.Insert(inputRow);
     }
 
 }

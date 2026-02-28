@@ -147,11 +147,11 @@ public static partial class Module
     public static void SetName(ReducerContext ctx, string name)
     {
         name = Helpers.ValidateName(name);
-        var user = ctx.Db.user.identity.Find(ctx.Sender);
+        var user = ctx.Db.UserRow.identity.Find(ctx.Sender);
         if (user is not null)
         {
             user.name = name;
-            ctx.Db.user.identity.Update(user);
+            ctx.Db.UserRow.identity.Update(user);
         }
     }
     [SpacetimeDB.Reducer]
@@ -159,7 +159,7 @@ public static partial class Module
     {
         text = Helpers.ValidateMessage(text);
 
-        ctx.Db.message.Insert(
+        ctx.Db.MessageRow.Insert(
             new MessageRow
             {
                 sender = ctx.Sender,
@@ -172,21 +172,21 @@ public static partial class Module
     public static void ClientConnected(ReducerContext ctx)
     {
         Log.Info($"Client connected: {ctx.Sender}");
-        var user = ctx.Db.user.identity.Find(ctx.Sender);
+        var user = ctx.Db.UserRow.identity.Find(ctx.Sender);
         if (user is not null)
         {
             user.online = true;
-            ctx.Db.user.identity.Update(user);
-            PlayerTransformRow? row = ctx.Db.player_transform.player.Find(ctx.Sender);
+            ctx.Db.UserRow.identity.Update(user);
+            PlayerTransformRow? row = ctx.Db.PlayerTransformRow.player.Find(ctx.Sender);
             if( row is not null)
             {
                 row.sequence = 0;
-                ctx.Db.player_transform.player.Update(row);
+                ctx.Db.PlayerTransformRow.player.Update(row);
             }
         }       
         else
         {
-            ctx.Db.user.Insert
+            ctx.Db.UserRow.Insert
             (
                 new UserRow
                 {
@@ -197,9 +197,9 @@ public static partial class Module
             );
 
             //If this is the first user, make them an admin
-            if (ctx.Db.user.Iter().Count() == 1)
+            if (ctx.Db.UserRow.Iter().Count() == 1)
             {
-                ctx.Db.admin.Insert
+                ctx.Db.AdminRow.Insert
                 (
                     new AdminRow
                     {
@@ -211,10 +211,10 @@ public static partial class Module
         }
 
         //Check if the player has a transformation row, if not create one
-        var playerTransform = ctx.Db.player_transform.player.Find(ctx.Sender);
+        var playerTransform = ctx.Db.PlayerTransformRow.player.Find(ctx.Sender);
         if (playerTransform is null)
         {
-            ctx.Db.player_transform.Insert
+            ctx.Db.PlayerTransformRow.Insert
             (
                 new PlayerTransformRow
                 {
@@ -231,13 +231,13 @@ public static partial class Module
     [Reducer(ReducerKind.ClientDisconnected)]
     public static void ClientDisconnected(ReducerContext ctx)
     {
-        var user = ctx.Db.user.identity.Find(ctx.Sender);
+        var user = ctx.Db.UserRow.identity.Find(ctx.Sender);
 
         if (user is not null)
         {
             // This user should exist, so set `Online: false`.
             user.online = false;
-            ctx.Db.user.identity.Update(user);
+            ctx.Db.UserRow.identity.Update(user);
         }
         else
         {
@@ -253,7 +253,7 @@ public static partial class Module
         Log.Info("Module initialized.");
         var currentTime = ctx.Timestamp;
         var thiryFramesPerSecondTickRate = new TimeDuration { Microseconds = 33333 }; 
-        ctx.Db.game_tick_schedule.Insert(new GameTickSchedule
+        ctx.Db.GameTickSchedule.Insert(new GameTickSchedule
         {
             id = 0,
             ScheduledAt = new ScheduleAt.Interval(thiryFramesPerSecondTickRate),

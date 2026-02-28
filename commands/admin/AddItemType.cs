@@ -29,7 +29,7 @@ public partial class AddItemType : ReducerCommand
 
 
         //Check if item tpye already exists
-        foreach (Module.ItemType itemRow in _ctx.Db.item_types.Iter())
+        foreach (Module.ItemType itemRow in _ctx.Db.ItemType.Iter())
         {
             if (itemRow.name == _name || itemRow.id == _id)
             {
@@ -38,7 +38,7 @@ public partial class AddItemType : ReducerCommand
             }
         }
 
-        Module.ItemType itemType = _ctx.Db.item_types.Insert
+        Module.ItemType itemType = _ctx.Db.ItemType.Insert
         (
             new Module.ItemType
             {

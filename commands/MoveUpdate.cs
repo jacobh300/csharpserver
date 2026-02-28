@@ -17,7 +17,7 @@ public partial class MoveUpdate : ReducerCommand
 
     public MoveUpdate(ReducerContext ctx, MoveStateType moveType, PlayerMoveRequest moveRequest) : base(ctx)
     {
-        _lastMoveUpdate = _ctx.Db.player_move_updates.player.Find(_user.Id);
+        _lastMoveUpdate = _ctx.Db.PlayerMoveUpdate.player.Find(_user.Id);
         _moveUpdate = moveRequest;
         _moveType = moveType;
     }
@@ -27,7 +27,7 @@ public partial class MoveUpdate : ReducerCommand
         if (_lastMoveUpdate == null)
         {
             // First move - just accept it
-            _ctx.Db.player_move_updates.Insert(new Module.PlayerMoveUpdate
+            _ctx.Db.PlayerMoveUpdate.Insert(new Module.PlayerMoveUpdate
             {
                 player = _user.Id,
                 origin = _moveUpdate.origin,
@@ -54,7 +54,7 @@ public partial class MoveUpdate : ReducerCommand
         if (_moveType == lastUpdate.moveType && _moveUpdate.origin.Equals(lastUpdate.origin))
         {
             // No movement - just update timestamp
-            _ctx.Db.player_move_updates.player.Update(new Module.PlayerMoveUpdate
+            _ctx.Db.PlayerMoveUpdate.player.Update(new Module.PlayerMoveUpdate
             {
                 player = _user.Id,
                 origin = _lastMoveUpdate.origin,
@@ -74,7 +74,7 @@ public partial class MoveUpdate : ReducerCommand
         {
             // Accept movement
             Log.Info($"Player {_user.Id} move validated successfully: moveType={_moveType}, origin=({_moveUpdate.origin.x:F2}, {_moveUpdate.origin.y:F2}, {_moveUpdate.origin.z:F2}), velocity=({_moveUpdate.velocity.x:F2}, {_moveUpdate.velocity.y:F2}, {_moveUpdate.velocity.z:F2})");
-            _ctx.Db.player_move_updates.player.Update(new Module.PlayerMoveUpdate
+            _ctx.Db.PlayerMoveUpdate.player.Update(new Module.PlayerMoveUpdate
             {
                 player = _user.Id,
                 origin = _moveUpdate.origin,
@@ -110,7 +110,7 @@ public partial class MoveUpdate : ReducerCommand
             }
             
             // Force correction - reset to last valid position
-            _ctx.Db.player_move_updates.player.Update(new Module.PlayerMoveUpdate
+            _ctx.Db.PlayerMoveUpdate.player.Update(new Module.PlayerMoveUpdate
             {
                 player = _user.Id,
                 origin = _lastMoveUpdate.origin,  // Reset position

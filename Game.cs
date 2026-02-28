@@ -18,6 +18,6 @@ public class Game
         gameTick.lastExecuted = now; 
 
         gameTick.tick++;
-        ctx.Db.game_tick_schedule.id.Update(gameTick);
+        ctx.Db.GameTickSchedule.id.Update(gameTick);
     }
 }

@@ -95,7 +95,7 @@ public partial class RequestMove : ReducerCommand
         _relativeMove = relativeMove;
 
 
-        Module.PlayerTransformRow? playerTransform = _ctx.Db.player_transform.player.Find(_user.Id);
+        Module.PlayerTransformRow? playerTransform = _ctx.Db.PlayerTransformRow.player.Find(_user.Id);
         if(playerTransform != null )
         {
             if( _relativeMove)
@@ -194,7 +194,7 @@ public partial class RequestMove : ReducerCommand
 
     protected override void run()
     {
-        Module.PlayerTransformRow? playerTransform = _ctx.Db.player_transform.player.Find(_user.Id);
+        Module.PlayerTransformRow? playerTransform = _ctx.Db.PlayerTransformRow.player.Find(_user.Id);
         if (playerTransform == null)
         {
             Log.Exception("Player transform not found for player: " + _user.Id);
@@ -233,7 +233,7 @@ public partial class RequestMove : ReducerCommand
         Log.Info("valid move request from player " + _user.Id + " old origin: " + lastOrigin + " new origin: " + newOrigin + " destination: " + to + " duration: " + _duration);
         playerTransform.position = new DbVector3(newOrigin.X, newOrigin.Y, newOrigin.Z);
         playerTransform.timestamp = _timestamp;
-        _ctx.Db.player_transform.player.Update(playerTransform); 
+        _ctx.Db.PlayerTransformRow.player.Update(playerTransform); 
     }
 
 }

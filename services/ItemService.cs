@@ -22,7 +22,7 @@ public class ItemService
 
     private Module.ItemType? GetItemTypeById(ItemTypeIds itemId)
     {
-        return _ctx.Db.item_types.id.Find((int)itemId);
+        return _ctx.Db.ItemType.id.Find((int)itemId);
     }
 
 
@@ -42,7 +42,7 @@ public class ItemService
                 quantity = quantity
             };
 
-            _ctx.Db.item.Insert(itemAdded);
+            _ctx.Db.ItemRow.Insert(itemAdded);
             return itemAdded;
 
         }
@@ -50,7 +50,7 @@ public class ItemService
         {
             existingItem.quantity += quantity;
 
-            _ctx.Db.item.id.Update(existingItem);
+            _ctx.Db.ItemRow.id.Update(existingItem);
             return existingItem;
         }
     }

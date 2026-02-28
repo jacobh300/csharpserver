@@ -19,7 +19,7 @@ public partial class GetUserCommand : ReducerCommand
 
     protected override void run()
     {
-        foreach (var user in _ctx.Db.user.Iter())
+        foreach (var user in _ctx.Db.UserRow.Iter())
         {
             if (user.name == _username)
             {

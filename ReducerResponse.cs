@@ -18,7 +18,7 @@ public class ReducerResponse
 
     protected static void sendResponseToUser(ReducerContext ctx, string eventData)
     {
-        ctx.Db.response.Insert(
+        ctx.Db.ResponseRow.Insert(
             new Module.ResponseRow
             {
                 identity = ctx.Sender,

@@ -35,7 +35,7 @@ public static class Helpers
 
     public static bool IsAdmin(ReducerContext ctx)
     {
-        Module.AdminRow? adminRow = ctx.Db.admin.identity.Find(ctx.Sender);
+        Module.AdminRow? adminRow = ctx.Db.AdminRow.identity.Find(ctx.Sender);
 
         if (adminRow != null)
         {
@@ -47,7 +47,7 @@ public static class Helpers
 
     public static Module.ItemType GetItemRowFromName(ReducerContext ctx, string itemName)
     {
-        Module.ItemType? itemType = ctx.Db.item_types.name.Find(itemName);
+        Module.ItemType? itemType = ctx.Db.ItemType.name.Find(itemName);
 
         if (itemType == null)
         {

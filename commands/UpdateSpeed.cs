@@ -21,10 +21,10 @@ public partial class UpdateSpeed : ReducerCommand
     protected override void run()
     {
         //Set all players speed
-        foreach(var player in _ctx.Db.player_transform.Iter())
+        foreach(var player in _ctx.Db.PlayerTransformRow.Iter())
         {
             player.moveSpeed = _speed;
-            _ctx.Db.player_transform.player.Update(player);
+            _ctx.Db.PlayerTransformRow.player.Update(player);
         }
     }
 
