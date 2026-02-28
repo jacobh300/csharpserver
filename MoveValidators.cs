@@ -96,6 +96,7 @@ public static class MoveStateValidatorRegistry
         [MoveStateType.Run] = new RunValidator(),
         [MoveStateType.Jump] = new JumpValidator(),
         [MoveStateType.Fall] = new FallValidator(),
+        [MoveStateType.Stationary] = new StationaryValidator(),
     };
     
     public static BaseMoveStateValidator GetValidator(MoveStateType moveType)
@@ -144,7 +145,7 @@ public static class ValidationHelpers
     
     public static bool IsGrounded(MoveStateType state)
     {
-        return state == MoveStateType.Idle || state == MoveStateType.Walk || state == MoveStateType.Run;
+        return state == MoveStateType.Idle || state == MoveStateType.Walk || state == MoveStateType.Run || state == MoveStateType.Stationary;
     }
     
     public static bool IsAirborne(MoveStateType state)
@@ -481,6 +482,46 @@ public class FallValidator : BaseMoveStateValidator
                 return new ValidationResult(false,
                     $"Fall gained {gainedSpeed:F2} m/s horizontal speed (can't accelerate in air)");
             }
+        }
+        
+        return new ValidationResult(true);
+    }
+}
+
+public class StationaryValidator : BaseMoveStateValidator
+{
+    public override ValidationResult CanEnterState(MoveStateType fromState, PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
+    {
+        // Can only enter stationary from Run state (grounded running state)
+        if (fromState == MoveStateType.Run)
+        {
+            return new ValidationResult(true);
+        }
+        
+        return new ValidationResult(false, $"Invalid transition: {fromState} → Stationary (can only cast while running)");
+    }
+    
+    public override ValidationResult ValidateMovement(PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
+    {
+        // Should be on ground
+        if (moveRequest.origin.y > MovementConstants.MAX_GROUND_HEIGHT)
+        {
+            return new ValidationResult(false, $"Stationary but Y={moveRequest.origin.y:F2} (not grounded)");
+        }
+        
+        // Position should not change while stationary
+        float horizontalDistance = ValidationHelpers.GetHorizontalDistance(moveRequest.origin, last.origin);
+        if (horizontalDistance > 0.01f) // Small tolerance for floating point errors
+        {
+            return new ValidationResult(false, 
+                $"Stationary but moved {horizontalDistance:F2} units (position should remain fixed during cast)");
+        }
+        
+        // Velocity should be zero or minimal
+        float horizontalSpeed = ValidationHelpers.GetHorizontalSpeed(moveRequest.velocity);
+        if (horizontalSpeed > 0.1f)
+        {
+            return new ValidationResult(false, $"Stationary but moving at {horizontalSpeed:F2} m/s");
         }
         
         return new ValidationResult(true);

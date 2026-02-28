@@ -109,7 +109,8 @@ public enum MoveStateType
     Walk,
     Run,
     Jump,
-    Fall
+    Fall,
+    Stationary
 }
 
 /// <summary>
