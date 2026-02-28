@@ -165,7 +165,7 @@ public static class ValidationHelpers
 
         if (currentTimestamp > serverNow.MicrosecondsSinceUnixEpoch + MAX_OFFSET_IN_FUTURE * 1000)
         {
-            Log.Exception($"Timestamp validation failed: currentTimestamp {currentTimestamp} is too far in the future compared to server time {serverNow.MicrosecondsSinceUnixEpoch}");
+            Log.Exception($"Version 2.0.2: Timestamp validation failed: currentTimestamp {currentTimestamp} is too far in the future compared to server time {serverNow.MicrosecondsSinceUnixEpoch}");
             return new ValidationResult(false, "Timestamp is too far in the future");
         }
 
