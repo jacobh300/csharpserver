@@ -91,8 +91,6 @@ public static class MoveStateValidatorRegistry
 {
     private static readonly Dictionary<MoveStateType, BaseMoveStateValidator> _validators = new()
     {
-        [MoveStateType.Idle] = new IdleValidator(),
-        [MoveStateType.Walk] = new WalkValidator(),
         [MoveStateType.Run] = new RunValidator(),
         [MoveStateType.Jump] = new JumpValidator(),
         [MoveStateType.Fall] = new FallValidator(),
@@ -114,7 +112,6 @@ public static class MovementConstants
     public const float MAX_MOVE_DISTANCE = 50.0f; // move requests shouldn't be able to move more than this distance from last update in a single tick (prevents teleporting)
 
     // Grounded movement
-    public const float MAX_WALK_SPEED = 6.0f;
     public const float MAX_RUN_SPEED = 12.0f;
     public const float MAX_GROUND_HEIGHT = 0.5f;
     
@@ -144,7 +141,7 @@ public static class ValidationHelpers
     
     public static bool IsGrounded(MoveStateType state)
     {
-        return state == MoveStateType.Idle || state == MoveStateType.Walk || state == MoveStateType.Run;
+        return state == MoveStateType.Run;
     }
     
     public static bool IsAirborne(MoveStateType state)
@@ -201,102 +198,11 @@ public static class ValidationHelpers
 // STATE VALIDATORS
 // ============================================================================
 
-public class IdleValidator : BaseMoveStateValidator
-{
-    public override ValidationResult CanEnterState(MoveStateType fromState, PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
-    {
-        // Can idle from any grounded state, or from landing
-        if (ValidationHelpers.IsGrounded(fromState) || ValidationHelpers.IsAirborne(fromState))
-        {
-            // If coming from airborne, validate landing
-            if (ValidationHelpers.IsAirborne(fromState))
-            {
-                if (moveRequest.origin.y > MovementConstants.LANDING_MAX_HEIGHT)
-                {
-                    return new ValidationResult(false, 
-                        $"Cannot land into Idle: Y={moveRequest.origin.y:F2} (max: {MovementConstants.LANDING_MAX_HEIGHT:F2})");
-                }
-                
-                if (Math.Abs(moveRequest.velocity.y) > MovementConstants.LANDING_MAX_VERTICAL_SPEED)
-                {
-                    return new ValidationResult(false,
-                        $"Cannot land into Idle: vy={moveRequest.velocity.y:F2} too high");
-                }
-            }
-            
-            return new ValidationResult(true);
-        }
-        
-        return new ValidationResult(false, $"Invalid transition: {fromState} → Idle");
-    }
-    
-    public override ValidationResult ValidateMovement(PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
-    {
-        // Should be on ground
-        if (moveRequest.origin.y > MovementConstants.MAX_GROUND_HEIGHT)
-        {
-            return new ValidationResult(false, $"Idle but Y={moveRequest.origin.y:F2} (not grounded)");
-        }
-        
-        // Should have minimal speed
-        float horizontalSpeed = ValidationHelpers.GetHorizontalSpeed(moveRequest.velocity);
-        if (horizontalSpeed > 2.0f)
-        {
-            return new ValidationResult(false, $"Idle but moving at {horizontalSpeed:F2} m/s");
-        }
-        
-        return new ValidationResult(true);
-    }
-}
-
-public class WalkValidator : BaseMoveStateValidator
-{
-    public override ValidationResult CanEnterState(MoveStateType fromState, PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
-    {
-        // Can walk from any grounded state, or from landing
-        if (ValidationHelpers.IsGrounded(fromState) || ValidationHelpers.IsAirborne(fromState))
-        {
-            // If coming from airborne, validate landing
-            if (ValidationHelpers.IsAirborne(fromState))
-            {
-                if (moveRequest.origin.y > MovementConstants.LANDING_MAX_HEIGHT)
-                {
-                    return new ValidationResult(false,
-                        $"Cannot land into Walk: Y={moveRequest.origin.y:F2} (max: {MovementConstants.LANDING_MAX_HEIGHT:F2})");
-                }
-            }
-            
-            return new ValidationResult(true);
-        }
-        
-        return new ValidationResult(false, $"Invalid transition: {fromState} → Walk");
-    }
-    
-    public override ValidationResult ValidateMovement(PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
-    {
-        // Should be on ground
-        if (moveRequest.origin.y > MovementConstants.MAX_GROUND_HEIGHT)
-        {
-            return new ValidationResult(false, $"Walk but Y={moveRequest.origin.y:F2} (not grounded)");
-        }
-        
-        // Speed should be within walk limits
-        float horizontalSpeed = ValidationHelpers.GetHorizontalSpeed(moveRequest.velocity);
-        if (horizontalSpeed > MovementConstants.MAX_WALK_SPEED)
-        {
-            return new ValidationResult(false,
-                $"Walk speed {horizontalSpeed:F2} m/s exceeds max {MovementConstants.MAX_WALK_SPEED:F2} m/s");
-        }
-        
-        return new ValidationResult(true);
-    }
-}
-
 public class RunValidator : BaseMoveStateValidator
 {
     public override ValidationResult CanEnterState(MoveStateType fromState, PlayerMoveRequest moveRequest, Module.PlayerMoveUpdate last)
     {
-        // Can run from any grounded state, or from landing
+        // Can enter grounded state (Run) from any airborne state (landing) or from another grounded state
         if (ValidationHelpers.IsGrounded(fromState) || ValidationHelpers.IsAirborne(fromState))
         {
             // If coming from airborne, validate landing
@@ -305,7 +211,7 @@ public class RunValidator : BaseMoveStateValidator
                 if (moveRequest.origin.y > MovementConstants.LANDING_MAX_HEIGHT)
                 {
                     return new ValidationResult(false,
-                        $"Cannot land into Run: Y={moveRequest.origin.y:F2} (max: {MovementConstants.LANDING_MAX_HEIGHT:F2})");
+                        $"Cannot land: Y={moveRequest.origin.y:F2} (max: {MovementConstants.LANDING_MAX_HEIGHT:F2})");
                 }
             }
             
@@ -320,7 +226,7 @@ public class RunValidator : BaseMoveStateValidator
         // Should be on ground
         if (moveRequest.origin.y > MovementConstants.MAX_GROUND_HEIGHT)
         {
-            return new ValidationResult(false, $"Run but Y={moveRequest.origin.y:F2} (not grounded)");
+            return new ValidationResult(false, $"Grounded state but Y={moveRequest.origin.y:F2} (not grounded)");
         }
 
         return ValidationHelpers.ValidateHorizontalMove(last, moveRequest, MovementConstants.RUN_SPEED_VELOCITY);

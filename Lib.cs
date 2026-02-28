@@ -98,47 +98,6 @@ public static partial class Module
         public int suspiciousActivityCount;
     }
 
-    [Table(Name = "player_transform", Public = true)]
-    public partial class PlayerTransformRow
-    {
-        [SpacetimeDB.PrimaryKey]
-        public Identity player;
-        public DbVector3 position;
-        public DbVector2 input;
-        public float moveSpeed;
-        public float yaw;
-        public Timestamp timestamp = new Timestamp();
-        public UInt32 sequence = 0;
-        public long tick = 0;
-    }
-
-    [Table(Name = "player_input", Public = true)]
-    public partial class PlayerInputRow
-    {
-        [SpacetimeDB.PrimaryKey]
-        [SpacetimeDB.AutoInc]
-        public ulong id;
-        [SpacetimeDB.Index.BTree(Name = "playerIndex")]
-        public Identity player;
-        public DbVector2 input;
-        public float yaw;
-        public DbVector3 last_position;
-        public UInt32 sequence = 0;
-    }
-
-    [Table(Name = "entity_transform", Public = true)]
-    public partial class EntityTransformRow
-    {
-        [SpacetimeDB.PrimaryKey]
-        [SpacetimeDB.AutoInc]
-        public ulong id;
-        public string type = "";
-        public DbVector3 position;
-        public DbVector3 velocity;
-        public float yaw;
-        public Timestamp timestamp = new Timestamp();
-    }
-
 
     #endregion
 
@@ -177,12 +136,9 @@ public static partial class Module
         {
             user.online = true;
             ctx.Db.UserRow.identity.Update(user);
-            PlayerTransformRow? row = ctx.Db.PlayerTransformRow.player.Find(ctx.Sender);
-            if( row is not null)
-            {
-                row.sequence = 0;
-                ctx.Db.PlayerTransformRow.player.Update(row);
-            }
+
+            
+
         }       
         else
         {
@@ -207,24 +163,18 @@ public static partial class Module
                     }
                 );
                 Log.Info($"First user connected, granted admin: {ctx.Sender}");
-            }   
-        }
+            }  
 
-        //Check if the player has a transformation row, if not create one
-        var playerTransform = ctx.Db.PlayerTransformRow.player.Find(ctx.Sender);
-        if (playerTransform is null)
-        {
-            ctx.Db.PlayerTransformRow.Insert
-            (
-                new PlayerTransformRow
-                {
-                    player =  ctx.Sender,
-                    position = new DbVector3 { x = 0, y = 0, z = 0 },
-                    moveSpeed = 4.0f,
-                    timestamp = ctx.Timestamp,
-                    tick = 0
-                }
-            );
+            ctx.Db.PlayerMoveUpdate.Insert(new PlayerMoveUpdate
+            {
+                player = ctx.Sender,
+                origin = new DbVector3(0, 0, 0),
+                velocity = new DbVector3(0, 0, 0),
+                moveType = MoveStateType.Run,
+                timestamp = 0,
+                lastValidPosition = new DbVector3(0, 0, 0),
+                suspiciousActivityCount = 0,
+            }); 
         }
     }
 

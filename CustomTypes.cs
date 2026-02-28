@@ -105,8 +105,6 @@ public partial struct PlayerMoveRequest
 [SpacetimeDB.Type]
 public enum MoveStateType
 {
-    Idle,
-    Walk,
     Run,
     Jump,
     Fall
