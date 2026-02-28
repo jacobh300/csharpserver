@@ -161,7 +161,7 @@ public static class ValidationHelpers
     public static ValidationResult ValidateTimestamp(long lastTimestamp, long currentTimestamp, Timestamp serverNow)
     {
         int MAX_OFFSET_IN_PAST = 5000;
-        int MAX_OFFSET_IN_FUTURE = 1000;
+        int MAX_OFFSET_IN_FUTURE = 2000; // Allow 2 seconds for client/server clock drift
 
         if (currentTimestamp > serverNow.MicrosecondsSinceUnixEpoch + MAX_OFFSET_IN_FUTURE * 1000)
         {
